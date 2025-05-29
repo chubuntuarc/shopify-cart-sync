@@ -1,0 +1,49 @@
+{
+  "name": "persistent-cart-middleware",
+  "version": "1.0.0",
+  "description": "Next.js middleware for Shopify persistent cart",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:reset": "prisma migrate reset",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts",
+    "type-check": "tsc --noEmit",
+    "setup": "./scripts/setup.sh"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.6.0",
+    "@shopify/admin-api-client": "^0.2.0",
+    "@shopify/shopify-api": "^8.0.0",
+    "cookie": "^0.5.0",
+    "cors": "^2.8.5",
+    "jose": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "next": "^14.0.0",
+    "next-auth": "^4.24.0",
+    "prisma": "^5.6.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "redis": "^4.6.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/cookie": "^0.5.0",
+    "@types/jsonwebtoken": "^9.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@types/uuid": "^9.0.0",
+    "autoprefixer": "^10.4.21",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0",
+    "postcss": "^8.5.4",
+    "tailwindcss": "^3.4.17",
+    "tsx": "^3.14.0",
+    "typescript": "^5.0.0"
+  }
+}

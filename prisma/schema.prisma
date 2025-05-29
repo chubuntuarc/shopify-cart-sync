@@ -1,0 +1,77 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id            String   @id @default(cuid())
+  sessionToken  String   @unique
+  userId        String?
+  expires       DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Cart relationship
+  cart          Cart?
+  
+  @@map("sessions")
+}
+
+model Cart {
+  id          String     @id @default(cuid())
+  sessionId   String     @unique
+  shopifyCartId String?  // Shopify cart ID
+  checkoutUrl String?    // Shopify checkout URL
+  totalPrice  Float?     @default(0)
+  currency    String?    @default("USD")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  // Relationships
+  session     Session    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  items       CartItem[]
+  
+  @@map("carts")
+}
+
+model CartItem {
+  id              String   @id @default(cuid())
+  cartId          String
+  shopifyVariantId String
+  productId       String
+  title           String
+  variant_title   String?
+  price           Float
+  quantity        Int
+  image       String?
+  product_handle  String?
+  sku             String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Cart relationship
+  cart            Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  
+  @@unique([cartId, shopifyVariantId])
+  @@map("cart_items")
+}
+
+model Device {
+  id          String   @id @default(cuid())
+  sessionId   String
+  deviceId    String   @unique // Unique device ID (fingerprint)
+  userAgent   String?
+  ipAddress   String?
+  lastAccess  DateTime @default(now())
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  @@map("devices")
+} 
