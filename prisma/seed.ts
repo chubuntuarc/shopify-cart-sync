@@ -15,7 +15,7 @@ async function main() {
   })
 
   console.log('✅ Created test session:', testSession.id)
-
+ 
   // Create test cart
   const testCart = await prisma.cart.create({
     data: {
