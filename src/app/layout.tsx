@@ -1,8 +1,9 @@
 import './globals.css'
 import type { Metadata } from 'next'
+import Head from 'next/head'
 
 export const metadata: Metadata = {
-  title: '🏹 Arco Cart Sync',
+  title: 'Arco - Cart Sync',
   description: 'Arco Cart Sync by Jesus Arciniega',
   icons: {
     icon: [
@@ -21,7 +22,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <Head>
+        <link rel="icon" href="/favicon.ico" />
+      </Head>
       <body>{children}</body>
     </html>
   )
-} 
+}

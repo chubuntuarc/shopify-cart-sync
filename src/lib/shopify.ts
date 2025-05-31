@@ -84,6 +84,30 @@ export const shopifyRestClient = {
   },
 };
 
+// src/lib/shopify.ts (puedes agregar una función utilitaria)
+export async function registerShopifyWebhook(shopDomain: string, accessToken: string, topic: string, address: string) {
+  const response = await fetch(`https://${shopDomain}/admin/api/2023-10/webhooks.json`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': accessToken,
+    },
+    body: JSON.stringify({
+      webhook: {
+        topic, // Ejemplo: 'customers/login'
+        address, // URL pública de tu endpoint, ej: 'https://tu-app.com/api/webhooks/customers-login'
+        format: 'json',
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to register webhook: ${error}`);
+  }
+  return response.json();
+}
+
 // GraphQL queries for Admin API
 export const GET_PRODUCT_BY_HANDLE = `
   query getProductByHandle($handle: String!) {
@@ -233,4 +257,27 @@ export const shopify = {
     Graphql: shopifyClient,
     Rest: shopifyRestClient,
   },
-}; 
+};
+
+export async function registerShopifyScriptTag(shopDomain: string, accessToken: string, scriptUrl: string) {
+  const response = await fetch(`https://${shopDomain}/admin/api/2023-10/script_tags.json`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Access-Token': accessToken,
+    },
+    body: JSON.stringify({
+      script_tag: {
+        event: 'onload',
+        src: scriptUrl,
+        display_scope: 'online_store'
+      }
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.text();
+    throw new Error(`Failed to register ScriptTag: ${error}`);
+  }
+  return response.json();
+} 

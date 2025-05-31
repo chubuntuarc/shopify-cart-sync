@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { registerShopifyWebhook, registerShopifyScriptTag } from '@/lib/shopify';
 
 const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY!;
 const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET!;
 const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
 // Required scopes for the app
-const SCOPES = 'read_products,read_orders,write_orders,read_checkouts,write_checkouts';
+const SCOPES = 'read_products,read_orders,write_orders,read_checkouts,write_checkouts,write_script_tags';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -106,6 +107,31 @@ export async function GET(request: NextRequest) {
     });
 
     console.log('Shop saved to database:', savedShop.id);
+
+    // REGISTRA EL WEBHOOK AQUÍ
+    // try {
+    //   await registerShopifyWebhook(
+    //     shop,
+    //     tokenData.access_token,
+    //     'customers/login',
+    //     `${APP_URL}/api/webhooks/customers-login`
+    //   );
+    //   console.log('Webhook customers/login registered');
+    // } catch (err) {
+    //   console.error('Error registering webhook:', err);
+    // }
+
+    // Registra el ScriptTag para el storefront
+    try {
+      await registerShopifyScriptTag(
+        shop,
+        tokenData.access_token,
+        `${APP_URL}/scripts/cart-sync.js`
+      );
+      console.log('ScriptTag registered');  
+    } catch (err) {
+      console.error('Error registering ScriptTag:', err);
+    }
 
     // Redirect to Shopify admin apps page instead of direct app dashboard
     const shopName = shop.replace('.myshopify.com', '');
