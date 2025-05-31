@@ -238,7 +238,7 @@ export default function Home() {
             <div className="text-center text-sm text-gray-500">
               <p>Or use the direct installation URL:</p>
               <code className="bg-gray-100 px-2 py-1 rounded text-xs">
-                https://arco-7kql7ndpe-arciniegas-projects.vercel.app/api/shopify/install?shop=YOUR-STORE.myshopify.com
+                https://arco-henna.vercel.app/api/shopify/install?shop=YOUR-STORE.myshopify.com
               </code>
             </div>
           </div>
