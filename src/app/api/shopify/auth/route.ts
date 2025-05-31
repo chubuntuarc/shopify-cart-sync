@@ -107,8 +107,9 @@ export async function GET(request: NextRequest) {
 
     console.log('Shop saved to database:', savedShop.id);
 
-    // Redirect to app dashboard
-    const redirectUrl = `${APP_URL}/dashboard?shop=${shop}`;
+    // Redirect to Shopify admin apps page instead of direct app dashboard
+    const shopName = shop.replace('.myshopify.com', '');
+    const redirectUrl = `https://admin.shopify.com/store/${shopName}/apps/arco-cart-sync`;
     console.log('Redirecting to:', redirectUrl);
     
     return NextResponse.redirect(redirectUrl);
