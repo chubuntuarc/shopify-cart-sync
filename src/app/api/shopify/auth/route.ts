@@ -14,7 +14,10 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const state = searchParams.get('state');
 
+  console.log('Auth callback received:', { shop, hasCode: !!code, state });
+
   if (!shop) {
+    console.error('Missing shop parameter');
     return NextResponse.json(
       { error: 'Missing shop parameter' },
       { status: 400 }
@@ -37,6 +40,8 @@ export async function GET(request: NextRequest) {
 
   // Handle OAuth callback
   try {
+    console.log('Starting token exchange for shop:', shop);
+
     // Exchange code for access token
     const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
       method: 'POST',
@@ -51,10 +56,19 @@ export async function GET(request: NextRequest) {
     });
 
     const tokenData = await tokenResponse.json();
+    console.log('Token response status:', tokenResponse.status);
+
+    if (!tokenResponse.ok) {
+      console.error('Token exchange failed:', tokenData);
+      throw new Error(`Token exchange failed: ${tokenData.error || 'Unknown error'}`);
+    }
 
     if (!tokenData.access_token) {
+      console.error('No access token in response:', tokenData);
       throw new Error('Failed to get access token');
     }
+
+    console.log('Token exchange successful, fetching shop data');
 
     // Get shop information
     const shopResponse = await fetch(`https://${shop}/admin/api/2023-10/shop.json`, {
@@ -64,9 +78,17 @@ export async function GET(request: NextRequest) {
     });
 
     const shopData = await shopResponse.json();
+    console.log('Shop API response status:', shopResponse.status);
+
+    if (!shopResponse.ok) {
+      console.error('Shop API failed:', shopData);
+      throw new Error(`Shop API failed: ${shopData.error || 'Unknown error'}`);
+    }
+
+    console.log('Shop data fetched, saving to database');
 
     // Store shop and access token in database
-    await prisma.shop.upsert({
+    const savedShop = await prisma.shop.upsert({
       where: { domain: shop },
       update: {
         accessToken: tokenData.access_token,
@@ -83,13 +105,28 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    console.log('Shop saved to database:', savedShop.id);
+
     // Redirect to app dashboard
-    return NextResponse.redirect(`${APP_URL}/dashboard?shop=${shop}`);
+    const redirectUrl = `${APP_URL}/dashboard?shop=${shop}`;
+    console.log('Redirecting to:', redirectUrl);
+    
+    return NextResponse.redirect(redirectUrl);
 
   } catch (error) {
-    console.error('OAuth error:', error);
+    console.error('OAuth error details:', error);
+    console.error('Error stack:', (error as Error).stack);
+    
+    // Return more detailed error information
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+    
     return NextResponse.json(
-      { error: 'Failed to install app' },
+      { 
+        error: 'Failed to install app',
+        details: errorMessage,
+        shop: shop,
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }
