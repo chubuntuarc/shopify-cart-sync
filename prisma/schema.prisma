@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -74,4 +74,17 @@ model Device {
   createdAt   DateTime @default(now())
   
   @@map("devices")
+}
+
+model Shop {
+  id          String   @id @default(cuid())
+  domain      String   @unique // shop.myshopify.com
+  accessToken String   // Shopify access token
+  scope       String?  // Granted scopes
+  isActive    Boolean  @default(true)
+  shopData    Json?    // Store shop information from Shopify API
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("shops")
 } 

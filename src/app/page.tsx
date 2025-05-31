@@ -387,9 +387,9 @@ export default function Home() {
                     <div key={item.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center overflow-hidden">
-                          {item.image_url ? (
+                          {item.image ? (
                             <img 
-                              src={item.image_url} 
+                              src={item.image} 
                               alt={item.title}
                               className="w-full h-full object-cover"
                             />
