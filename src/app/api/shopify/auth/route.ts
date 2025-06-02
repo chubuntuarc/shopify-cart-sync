@@ -7,7 +7,7 @@ const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET!;
 const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
 // Required scopes for the app
-const SCOPES = 'read_products,read_orders,write_orders,read_checkouts,write_checkouts,write_script_tags';
+const SCOPES = 'read_products,read_orders,write_orders,read_checkouts,write_checkouts';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
