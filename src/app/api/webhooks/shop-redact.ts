@@ -1,9 +1,27 @@
 // pages/api/webhooks/customers-data-request.ts
-import { NextApiRequest, NextApiResponse } from 'next';
+import { NextRequest, NextResponse } from 'next/server';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end();
+export async function POST(request: NextRequest) {
+  const hmac = request.headers.get('x-shopify-hmac-sha256');
+  const body = await request.text();
 
-  // TODO: Verify HMAC and process the request
-  res.status(200).end();
+  // Replace with your actual secret
+  const secret = process.env.SHOPIFY_API_SECRET!;
+
+  // Calculate HMAC
+  const crypto = await import('crypto');
+  const generatedHmac = crypto
+    .createHmac('sha256', secret)
+    .update(body, 'utf8')
+    .digest('base64');
+
+  if (generatedHmac !== hmac) {
+    // HMAC is invalid, return 401
+    return new NextResponse('Unauthorized', { status: 401 });
+  }
+
+  // HMAC is valid, process the webhook
+  // ... your logic here ...
+
+  return new NextResponse('OK', { status: 200 });
 }
