@@ -169,3 +169,19 @@ function generateNonce(): string {
   return Math.random().toString(36).substring(2, 15) + 
          Math.random().toString(36).substring(2, 15);
 } 
+
+export async function POST(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const shop = searchParams.get('shop');
+
+  if (!shop) {
+    return NextResponse.json(
+      { error: 'Missing shop parameter. Usage: /api/shopify/install?shop=your-store.myshopify.com' },
+      { status: 400 }
+    );
+  }
+
+  const shopName = shop.replace('.myshopify.com', '');
+  const redirectUrl = `https://admin.shopify.com/store/${shopName}/apps/arco-cart-sync`;
+  return NextResponse.redirect(redirectUrl);
+} 
