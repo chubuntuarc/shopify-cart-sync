@@ -16,7 +16,9 @@ export default function Home() {
     const embedded = params.get('embedded');
     if (shop && !embedded) {
       router.replace(`/api/shopify/install?shop=${shop}`);
-    }else{
+    } else if (shop && embedded) {
+      router.replace(`/dashboard?shop=${shop}`);
+    } else {
       initializeSession();
     }
   }, []);
