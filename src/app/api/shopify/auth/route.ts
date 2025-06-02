@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       `client_id=${SHOPIFY_API_KEY}&` +
       `scope=${SCOPES}&` +
       `redirect_uri=${APP_URL}/api/shopify/auth&` +
-      `state=${nonce}`;
+      `state=${nonce}&grant_options[]=per-user`;
 
     // Store nonce for validation
     // In production, use Redis or database
@@ -108,18 +108,17 @@ export async function GET(request: NextRequest) {
 
     console.log('Shop saved to database:', savedShop.id);
 
-    // REGISTRA EL WEBHOOK AQUÍ
-    // try {
-    //   await registerShopifyWebhook(
-    //     shop,
-    //     tokenData.access_token,
-    //     'customers/login',
-    //     `${APP_URL}/api/webhooks/customers-login`
-    //   );
-    //   console.log('Webhook customers/login registered');
-    // } catch (err) {
-    //   console.error('Error registering webhook:', err);
-    // }
+    try {
+      await registerShopifyWebhook(
+        shop,
+        tokenData.access_token,
+        'customers/login',
+        `${APP_URL}/api/webhooks/customers-login`
+      );
+      console.log('Webhook customers/login registered');
+    } catch (err) {
+      console.error('Error registering webhook:', err);
+    }
 
     // Registra el ScriptTag para el storefront
     // try {

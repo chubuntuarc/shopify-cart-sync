@@ -12,6 +12,7 @@ export async function POST(request: NextRequest) {
     
     // Get updated cart
     const updatedCart = await CartService.getOrCreateCart(sessionData.sessionId);
+    console.log("updatedCart", updatedCart);
     
     return NextResponse.json({
       success: true,
