@@ -62,9 +62,22 @@ export async function getSessionFromToken(sessionToken: string) {
 
 export async function getOrCreateSession(request: NextRequest): Promise<SessionData> {
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  const userId = request.cookies.get('user_id')?.value;
 
   if (sessionToken) {
     const existingSession = await getSessionFromToken(sessionToken);
+    if (existingSession) {
+      return {
+        sessionId: existingSession.id,
+        sessionToken: existingSession.sessionToken,
+        expires: existingSession.expires,
+        userId: existingSession.userId || undefined,
+      };
+    }
+  }
+
+  if (userId) {
+    const existingSession = await prisma.session.findFirst({ where: { userId } });
     if (existingSession) {
       return {
         sessionId: existingSession.id,

@@ -358,4 +358,12 @@ export class CartService {
     // Default placeholder
     return 'https://via.placeholder.com/150x150/cccccc/ffffff?text=No+Image';
   }
+
+  static async getOrCreateCartByUserId(userId: string) {
+    let cart = await prisma.cart.findFirst({ where: { userId } });
+    if (!cart) {
+      cart = await prisma.cart.create({ data: { userId } });
+    }
+    return cart;
+  }
 } 

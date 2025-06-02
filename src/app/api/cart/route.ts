@@ -5,7 +5,9 @@ import { CartService } from '@/lib/cart';
 export async function GET(request: NextRequest) {
   try {
     const sessionData = await getOrCreateSession(request);
-    const cart = await CartService.getOrCreateCart(sessionData.sessionId);
+    const cart = sessionData.userId
+      ? await CartService.getOrCreateCartByUserId(sessionData.userId)
+      : await CartService.getOrCreateCart(sessionData.sessionId);
     
     return NextResponse.json({
       success: true,

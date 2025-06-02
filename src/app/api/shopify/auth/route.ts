@@ -88,6 +88,8 @@ export async function GET(request: NextRequest) {
 
     console.log('Shop data fetched, saving to database');
 
+    const userId = tokenData.associated_user?.id; // Shopify user ID
+
     // Store shop and access token in database
     const savedShop = await prisma.shop.upsert({
       where: { domain: shop },
@@ -96,6 +98,7 @@ export async function GET(request: NextRequest) {
         scope: tokenData.scope,
         isActive: true,
         shopData: shopData.shop,
+        // userId: userId || undefined, // Si tu modelo Shop lo soporta
       },
       create: {
         domain: shop,
@@ -103,6 +106,7 @@ export async function GET(request: NextRequest) {
         scope: tokenData.scope,
         isActive: true,
         shopData: shopData.shop,
+        // userId: userId || undefined,
       },
     });
 
@@ -127,23 +131,36 @@ export async function GET(request: NextRequest) {
       console.error('Error registering webhook:', err);
     }
 
-    // Registra el ScriptTag para el storefront
-    // try {
-    //   await registerShopifyScriptTag(
-    //     shop,
-    //     tokenData.access_token,
-    //     `${APP_URL}/scripts/cart-sync.js`
-    //   );
-    //   console.log('ScriptTag registered');  
-    // } catch (err) {
-    //   console.error('Error registering ScriptTag:', err);
-    // }
+    try {
+      await registerShopifyScriptTag(
+        shop,
+        tokenData.access_token,
+        `${APP_URL}/scripts/cart-sync.js`
+      );
+      console.log('ScriptTag registered');  
+    } catch (err) {
+      console.error('Error registering ScriptTag:', err);
+    }
 
     // Redirect to Shopify admin apps page instead of direct app dashboard
     const shopName = shop.replace('.myshopify.com', '');
     const redirectUrl = `https://admin.shopify.com/store/${shopName}/apps/arco-cart-sync`;
     console.log('Redirecting to:', redirectUrl);
     
+    // Crea o actualiza la sesión para el usuario
+    await prisma.session.upsert({
+      where: { id: String(userId) },
+      update: {
+        sessionToken: tokenData.access_token,
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
+      },
+      create: {
+        userId: String(userId),
+        sessionToken: tokenData.access_token,
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 días
+      },
+    });
+
     return NextResponse.redirect(redirectUrl);
 
   } catch (error) {
