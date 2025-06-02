@@ -360,10 +360,18 @@ export class CartService {
   }
 
   static async getOrCreateCartByUserId(userId: string) {
+    const session = await prisma.session.findFirst({ where: { userId } });
+    if (!session) throw new Error('No session found for user');
+
     let cart = await prisma.cart.findFirst({ where: { userId } });
     if (!cart) {
-      cart = await prisma.cart.create({ data: { userId } });
+      cart = await prisma.cart.create({
+        data: {
+          userId,
+          sessionId: session.id,
+        },
+      });
     }
     return cart;
   }
-} 
+}
