@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Cart, CartItem, SessionResponse, Session } from '@/types';
-import Link from 'next/link';
+import { Cart, SessionResponse, Session } from '@/types';
 import { useRouter } from 'next/navigation';
 
 export default function Home() {
@@ -12,11 +11,13 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    initializeSession();
     const params = new URLSearchParams(window.location.search);
     const shop = params.get('shop');
-    if (shop) {
+    const embedded = params.get('embedded');
+    if (shop && !embedded) {
       router.replace(`/api/shopify/install?shop=${shop}`);
+    }else{
+      initializeSession();
     }
   }, []);
 
