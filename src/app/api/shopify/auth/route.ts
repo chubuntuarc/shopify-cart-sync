@@ -112,10 +112,17 @@ export async function GET(request: NextRequest) {
       await registerShopifyWebhook(
         shop,
         tokenData.access_token,
-        'customers/login',
-        `${APP_URL}/api/webhooks/customers-login`
+        'cart/update',
+        `${APP_URL}/api/cart/sync`
       );
-      console.log('Webhook customers/login registered');
+      console.log('Webhook cart/update registered');
+      await registerShopifyWebhook(
+        shop,
+        tokenData.access_token,
+        'cart/create',
+        `${APP_URL}/api/cart/sync`
+      );
+      console.log('Webhook cart/create registered');
     } catch (err) {
       console.error('Error registering webhook:', err);
     }
