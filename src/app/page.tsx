@@ -3,14 +3,21 @@
 import { useState, useEffect } from 'react';
 import { Cart, CartItem, SessionResponse, Session } from '@/types';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 export default function Home() {
   const [cart, setCart] = useState<Cart | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     initializeSession();
+    const params = new URLSearchParams(window.location.search);
+    const shop = params.get('shop');
+    if (shop) {
+      router.replace(`/api/shopify/install?shop=${shop}`);
+    }
   }, []);
 
   const initializeSession = async () => {
