@@ -13,10 +13,10 @@ export default function Home() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const shop = params.get('shop');
-    const embedded = params.get('embedded');
-    if (shop && !embedded) {
+    const session = params.get('session');
+    if (shop && !session) {
       router.replace(`/api/shopify/install?shop=${shop}`);
-    } else if (shop && embedded) {
+    } else if (shop && session) {
       router.replace(`/dashboard?shop=${shop}`);
     } else {
       initializeSession();
