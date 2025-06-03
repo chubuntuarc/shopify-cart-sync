@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateSession } from '@/lib/auth'; // O tu método para identificar la sesión
 
-function getCorsHeaders(origin: string | null): Record<string, string> {
+function getCorsHeaders(origin) {
+  // Permite cualquier origen (para apps públicas Shopify)
   if (origin) {
     return {
       'Access-Control-Allow-Origin': origin,
@@ -11,10 +12,15 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
       'Access-Control-Allow-Credentials': 'true',
     };
   }
-  return {};
+  // Para casos donde origin es null (no debería pasar en producción)
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
 }
 
-export async function OPTIONS(request: NextRequest) {
+export async function OPTIONS(request) {
   const origin = request.headers.get('origin');
   return new NextResponse(null, {
     status: 204,
@@ -22,7 +28,7 @@ export async function OPTIONS(request: NextRequest) {
   });
 }
 
-export async function POST(request: NextRequest) {
+export async function POST(request) {
   const origin = request.headers.get('origin');
   const corsHeaders = getCorsHeaders(origin);
 
