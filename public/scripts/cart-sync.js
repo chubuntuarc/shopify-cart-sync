@@ -31,13 +31,20 @@ function setLocalCart(cart) {
   }
 }
 
+// Obtener el userId desde la cookie
+function getUserId() {
+  const match = document.cookie.match(/(?:^|;\s*)user_id=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 // 5. Obtener el carrito persistente del backend
 async function fetchBackendCart() {
   try {
     const response = await fetch('/api/cart', {
-      method: 'GET',
+      method: 'POST', // Cambia a POST para enviar body
       credentials: 'include',
-      headers: { 'Accept': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify({ userId: getUserId() }),
     });
     if (response.ok) {
       const data = await response.json();
@@ -56,7 +63,7 @@ async function syncLocalCartToBackend(cart) {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(cart),
+      body: JSON.stringify({ ...cart, userId: getUserId() }),
     });
     if (response.ok) {
       const data = await response.json();

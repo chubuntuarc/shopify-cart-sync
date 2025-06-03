@@ -5,7 +5,12 @@ import { CartService } from '@/lib/cart';
 export async function POST(request: NextRequest) {
   try {
     const sessionData = await getOrCreateSession(request);
-    const cart = await CartService.getOrCreateCart(sessionData.sessionId);
+    const userId = sessionData.userId;
+
+    // Ahora puedes usar userId para buscar el carrito correcto
+    const cart = userId
+      ? await CartService.getOrCreateCartByUserId(userId)
+      : await CartService.getOrCreateCart(sessionData.sessionId);
     
     // Force sync with Shopify
     await CartService.syncWithShopify(cart.id);
