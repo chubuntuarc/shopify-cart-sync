@@ -21,6 +21,7 @@ function setUserIdCookie(customerId) {
 // 3. Lógica para mantener la cookie actualizada
 function syncUserIdCookie() {
   const customerId = getCustomerId();
+  console.log('customerId', customerId);
   setUserIdCookie(customerId);
 }
 
