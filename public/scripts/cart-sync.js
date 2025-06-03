@@ -177,6 +177,28 @@ function observeCartChanges() {
   }, 2000); // Chequea cada 2 segundos (ajusta el intervalo si lo deseas)
 }
 
+function updateSessionWithUserId(customerId) {
+  if (!customerId) return;
+  fetch('/api/session/update', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId: customerId }),
+  }).then(res => {
+    if (res.ok) {
+      console.log('Session updated with userId:', customerId);
+    }
+  }).catch(err => {
+    console.error('Error updating session with userId:', err);
+  });
+}
+
+// Llama a esta función cuando detectes o cambie el CUSTOMER_ID
+const customerId = getCustomerId();
+if (customerId) {
+  updateSessionWithUserId(customerId);
+}
+
 console.log("Script loaded");
 interceptCartRequests();
 syncCart();
