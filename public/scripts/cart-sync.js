@@ -1,3 +1,5 @@
+console.log('cart-sync.js loaded');
+
 (function() {
 // Sync cart with Shopify
 
@@ -114,10 +116,8 @@ function observeCartChanges() {
   }, 2000); // Chequea cada 2 segundos (ajusta el intervalo si lo deseas)
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOMContentLoaded');
-  syncCart();
-  observeCartChanges();
-});
+console.log("Script loaded");
+syncCart();
+observeCartChanges();
 
 })();
