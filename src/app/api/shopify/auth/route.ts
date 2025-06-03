@@ -58,6 +58,7 @@ export async function GET(request: NextRequest) {
 
     const tokenData = await tokenResponse.json();
     console.log('Token response status:', tokenResponse.status);
+    console.log('TokenData:', tokenData);
 
     if (!tokenResponse.ok) {
       console.error('Token exchange failed:', tokenData);
@@ -148,19 +149,23 @@ export async function GET(request: NextRequest) {
     console.log('Redirecting to:', redirectUrl);
     
     // Crea o actualiza la sesión para el usuario
-    await prisma.session.upsert({
-      where: { id: String(userId) },
-      update: {
-        sessionToken: tokenData.access_token,
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      },
-      create: {
-        id: String(userId),
-        userId: String(userId),
-        sessionToken: tokenData.access_token,
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      },
-    });
+    if (userId) {
+      await prisma.session.upsert({
+        where: { id: String(userId) },
+        update: {
+          sessionToken: tokenData.access_token,
+          expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+        create: {
+          id: String(userId),
+          userId: String(userId),
+          sessionToken: tokenData.access_token,
+          expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        },
+      });
+    } else {
+      console.warn('No userId found in tokenData.associated_user');
+    }
 
     return NextResponse.redirect(redirectUrl);
 
