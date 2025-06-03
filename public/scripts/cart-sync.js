@@ -1,7 +1,7 @@
 console.log('cart-sync.js loaded');
 
 (function() {
-  const appURL = 'https://arco-cart-sync.vercel.app';
+  const appURL = "https://arco-henna.vercel.app";
 // Sync cart with Shopify
 
 // 1. Obtener el customerId desde window.CUSTOMER_ID (inyectado por Liquid)
