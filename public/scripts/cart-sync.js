@@ -132,7 +132,36 @@ async function syncCart() {
   }
 }
 
-// 12. Sincronizar cada vez que el carrito local cambie
+// 12. Detectar cambios en el carrito interceptando fetch/XMLHttpRequest
+function interceptCartRequests() {
+  // Interceptar fetch
+  const originalFetch = window.fetch;
+  window.fetch = function(...args) {
+    let url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
+    if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/)) {
+      setTimeout(() => {
+        // Espera a que el carrito se actualice en Shopify antes de sincronizar
+        syncCart();
+      }, 500);
+    }
+    return originalFetch.apply(this, args);
+  };
+
+  // Interceptar XMLHttpRequest
+  const originalOpen = window.XMLHttpRequest.prototype.open;
+  window.XMLHttpRequest.prototype.open = function(method, url, ...rest) {
+    this.addEventListener('load', function() {
+      if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/)) {
+        setTimeout(() => {
+          syncCart();
+        }, 500);
+      }
+    });
+    return originalOpen.call(this, method, url, ...rest);
+  };
+}
+
+// 13. Sincronizar cada vez que el carrito local cambie (opcional, por si hay cambios fuera de Shopify)
 function observeCartChanges() {
   let lastCart = getLocalCart();
 
@@ -149,6 +178,7 @@ function observeCartChanges() {
 }
 
 console.log("Script loaded");
+interceptCartRequests();
 syncCart();
 observeCartChanges();
 
