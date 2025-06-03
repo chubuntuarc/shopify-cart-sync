@@ -1,6 +1,7 @@
 console.log('cart-sync.js loaded');
 
 (function() {
+  const appURL = 'https://arco-cart-sync.vercel.app';
 // Sync cart with Shopify
 
 // 1. Obtener el customerId desde window.CUSTOMER_ID (inyectado por Liquid)
@@ -179,7 +180,7 @@ function observeCartChanges() {
 
 function updateSessionWithUserId(customerId) {
   if (!customerId) return;
-  fetch('/api/session/update', {
+  fetch(appURL + '/api/session/update', {
     method: 'POST',
     credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
