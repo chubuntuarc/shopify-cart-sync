@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       cart,
+      userId: sessionData.userId || null,
     });
   } catch (error) {
     console.error('Error getting cart:', error);

@@ -369,9 +369,35 @@ export class CartService {
         data: {
           userId,
           sessionId: session.id,
+          totalPrice: 0,
+          currency: 'USD',
         },
       });
     }
     return cart;
+  }
+
+  static async updateCartForUser(sessionId: string, userId: string) {
+    const session = await prisma.session.findFirst({ where: { userId } });
+    if (!session) throw new Error('No session found for user');
+
+    let cart = await prisma.cart.findFirst({ where: { sessionId } });
+    if (!cart) {
+      cart = await prisma.cart.create({
+        data: {
+          sessionId,
+          userId,
+          totalPrice: 0,
+          currency: 'USD',
+        },
+      });
+    }
+
+    await prisma.cart.updateMany({
+      where: { sessionId: session.id, userId: null },
+      data: { userId }
+    });
+
+    return this.formatCart(cart);
   }
 }
