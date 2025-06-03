@@ -281,3 +281,62 @@ export async function registerShopifyScriptTag(shopDomain: string, accessToken: 
   }
   return response.json();
 } 
+
+/**
+ * Inserta un snippet de Liquid en theme.liquid para exponer el customer.id en window.CUSTOMER_ID
+ * @param shopDomain - dominio de la tienda (ej: tienda.myshopify.com)
+ * @param accessToken - access token de la tienda
+ * @param snippet - código a insertar (opcional, por defecto el de CUSTOMER_ID)
+ */
+export async function injectCustomerIdSnippetToTheme(shopDomain: string, accessToken: string, snippet?: string) {
+  // 1. Obtener el theme activo
+  const themesRes = await fetch(`https://${shopDomain}/admin/api/2023-10/themes.json`, {
+    headers: { 'X-Shopify-Access-Token': accessToken }
+  });
+  if (!themesRes.ok) throw new Error('No se pudo obtener la lista de themes');
+  const themesData = await themesRes.json();
+  const mainTheme = themesData.themes.find((t: any) => t.role === 'main');
+  if (!mainTheme) throw new Error('No se encontró el theme principal');
+
+  // 2. Obtener el contenido de theme.liquid
+  const assetRes = await fetch(`https://${shopDomain}/admin/api/2023-10/themes/${mainTheme.id}/assets.json?asset[key]=layout/theme.liquid`, {
+    headers: { 'X-Shopify-Access-Token': accessToken }
+  });
+  if (!assetRes.ok) throw new Error('No se pudo obtener theme.liquid');
+  const assetData = await assetRes.json();
+  let content = assetData.asset.value;
+
+  // 3. Preparar el snippet
+  const defaultSnippet = `<script>window.CUSTOMER_ID = {{ customer.id | json }};</script>`;
+  const codeToInsert = snippet || defaultSnippet;
+
+  // 4. Verificar si ya está inyectado
+  if (content.includes('window.CUSTOMER_ID')) {
+    return { updated: false, message: 'El snippet ya está presente en theme.liquid' };
+  }
+
+  // 5. Insertar antes de </head>
+  content = content.replace('</head>', `${codeToInsert}\n</head>`);
+
+  // 6. Subir el asset modificado
+  const putRes = await fetch(`https://${shopDomain}/admin/api/2023-10/themes/${mainTheme.id}/assets.json`, {
+    method: 'PUT',
+    headers: {
+      'X-Shopify-Access-Token': accessToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      asset: {
+        key: 'layout/theme.liquid',
+        value: content
+      }
+    })
+  });
+  if (!putRes.ok) {
+    const error = await putRes.text();
+    throw new Error(`No se pudo actualizar theme.liquid: ${error}`);
+  }
+
+  return { updated: true, message: 'Snippet inyectado correctamente en theme.liquid' };
+} 
+

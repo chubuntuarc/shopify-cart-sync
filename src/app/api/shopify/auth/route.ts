@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { registerShopifyWebhook, registerShopifyScriptTag } from '@/lib/shopify';
+import { registerShopifyWebhook, registerShopifyScriptTag, injectCustomerIdSnippetToTheme } from '@/lib/shopify';
 
 const SHOPIFY_API_KEY = process.env.SHOPIFY_API_KEY!;
 const SHOPIFY_API_SECRET = process.env.SHOPIFY_API_SECRET!;
 const APP_URL = process.env.APP_URL || 'http://localhost:3000';
 
 // Required scopes for the app
-const SCOPES = 'read_products,read_orders,write_orders,read_checkouts,write_checkouts,read_customers';
+const SCOPES = 'read_products,read_orders,write_orders,read_checkouts,write_checkouts,read_customers,write_themes,read_themes';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -141,6 +141,10 @@ export async function GET(request: NextRequest) {
     } catch (err) {
       console.error('Error registering ScriptTag:', err);
     }
+    
+    // Inyectar el customer.id en theme.liquid
+    await injectCustomerIdSnippetToTheme(shop, tokenData.access_token);
+    console.log('Customer ID snippet injected');
 
     // Redirect to Shopify admin apps page instead of direct app dashboard
     const shopName = shop.replace('.myshopify.com', '');
