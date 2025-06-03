@@ -3,9 +3,10 @@ import { getOrCreateSession } from '@/lib/auth';
 import { CartService } from '@/lib/cart';
 
 export async function POST(request: NextRequest) {
+  const { userId } = await request.json();
   try {
     const sessionData = await getOrCreateSession(request);
-    const userId = sessionData.userId;
+    // const userId = sessionData.userId;
 
     // Ahora puedes usar userId para buscar el carrito correcto
     const cart = userId

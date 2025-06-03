@@ -3,16 +3,17 @@ import { getOrCreateSession } from '@/lib/auth';
 import { CartService } from '@/lib/cart';
 
 export async function GET(request: NextRequest) {
+  const { userId } = await request.json();
   try {
     const sessionData = await getOrCreateSession(request);
-    const cart = sessionData.userId
-      ? await CartService.getOrCreateCartByUserId(sessionData.userId)
+    const cart = userId
+      ? await CartService.getOrCreateCartByUserId(userId)
       : await CartService.getOrCreateCart(sessionData.sessionId);
     
     return NextResponse.json({
       success: true,
       cart,
-      userId: sessionData.userId || null,
+      userId: userId || null,
     });
   } catch (error) {
     console.error('Error getting cart:', error);
