@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getOrCreateSession } from '@/lib/auth'; // O tu método para identificar la sesión
 
-function getCorsHeaders(origin: string | null) {
+function getCorsHeaders(origin: string | null): Record<string, string> {
   if (origin) {
     return {
       'Access-Control-Allow-Origin': origin,
