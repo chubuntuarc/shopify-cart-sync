@@ -110,6 +110,102 @@ function cartsAreEqual(cartA, cartB) {
   return JSON.stringify(cartA) === JSON.stringify(cartB);
 }
 
+const cartLoadedPopup = () => {
+  // Remove any existing popup
+  const existing = document.querySelector('.cart-loaded-popup-backdrop');
+  if (existing) existing.remove();
+
+  // Create backdrop (transparent, only for z-index stacking)
+  const backdrop = document.createElement('div');
+  backdrop.className = 'cart-loaded-popup-backdrop';
+  backdrop.style.cssText = `
+    position: fixed; z-index: 9999; inset: 0; pointer-events: none;
+  `;
+
+  // Create popup
+  const popup = document.createElement('div');
+  popup.className = 'cart-loaded-popup';
+  popup.style.cssText = `
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    min-width: 220px;
+    max-width: 300px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 14px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+    padding: 1.2rem 1.2rem 1rem 1.2rem;
+    text-align: left;
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.4s;
+    pointer-events: auto;
+    font-family: inherit;
+  `;
+
+  // Add close button
+  const closeBtn = document.createElement('button');
+  closeBtn.innerHTML = '&times;';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.style.cssText = `
+    position: absolute;
+    top: 0.5rem;
+    right: 0.7rem;
+    background: transparent;
+    border: none;
+    color: #888;
+    font-size: 1.3rem;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 2;
+    padding: 0;
+    line-height: 1;
+    transition: color 0.2s;
+  `;
+  closeBtn.onmouseenter = () => closeBtn.style.color = '#222';
+  closeBtn.onmouseleave = () => closeBtn.style.color = '#888';
+  closeBtn.onclick = () => backdrop.remove();
+
+  popup.appendChild(closeBtn);
+
+  popup.innerHTML += `
+    <h1 style="font-size: 1rem; margin: 0 0 0.3rem 0; color: #222;">🛒 Don't miss your cart!</h1>
+    <p style="color: #444; margin: 0 0 1rem 0; font-size: 0.8rem;">You have an active cart in your account.</p>
+    <button id="cart-reload-btn" style="
+      background: linear-gradient(90deg, #6366f1 0%, #60a5fa 100%);
+      color: #fff;
+      border: none;
+      border-radius: 7px;
+      padding: 0.5rem 1rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(99,102,241,0.10);
+      transition: background 0.2s, transform 0.1s;
+      margin-top: 0.2rem;
+      display: block;
+      width: 100%;
+    ">Go to cart</button>
+  `;
+
+  // Add fade-in keyframes
+  const style = document.createElement('style');
+  style.innerHTML = `
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    .cart-loaded-popup-backdrop { animation: fadeIn 0.3s; }
+  `;
+  document.head.appendChild(style);
+
+  // Button event
+  popup.querySelector('#cart-reload-btn').onclick = () => window.location.href = '/cart';
+
+  // Append
+  backdrop.appendChild(popup);
+  document.body.appendChild(backdrop);
+};
+
 // 11. Lógica principal de sincronización
 async function syncCart() {
   console.log("syncCart");
@@ -130,6 +226,7 @@ async function syncCart() {
       await replaceShopifyCartWith(backendCart);
       setLocalCart(backendCart);
       firstSyncDone = true;
+      cartLoadedPopup();
       return;
     }
     if (!backendCart && localCart && localCart.items && localCart.items.length > 0) {
