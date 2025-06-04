@@ -127,8 +127,10 @@ async function syncCart() {
 
   // --- PRIMERA CARGA: Si hay backendCart, reemplaza el local y marca la bandera ---
   if (!firstSyncDone) {
+    console.log("firstSyncDone", firstSyncDone);
     firstSyncDone = true;
     if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
+      console.log("backendCart", backendCart);
       setLocalCart(backendCart);
       return;
     }
