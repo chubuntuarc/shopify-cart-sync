@@ -39,13 +39,21 @@ function isUserLoggedIn() {
 }
 
 // 6. Obtener el carrito local
-function getLocalCart() {
-  const cart = localStorage.getItem('cart');
+async function getLocalCart() {
   try {
-    return cart ? JSON.parse(cart) : null;
-  } catch {
-    return null;
+    const response = await fetch('/cart.js', {
+      method: 'GET',
+      credentials: 'include',
+      headers: { 'Accept': 'application/json' }
+    });
+    if (response.ok) {
+      const cart = await response.json();
+      return cart;
+    }
+  } catch (err) {
+    console.error('Error fetching Shopify AJAX cart:', err);
   }
+  return null;
 }
 
 // 7. Guardar el carrito en localStorage
@@ -120,7 +128,7 @@ async function syncCart() {
   customerId = getCustomerId();
   if (!customerId) return;
 
-  const localCart = getLocalCart();
+  const localCart = await getLocalCart();
   const backendCart = await fetchBackendCart();
 
   // Si ambos existen y son iguales, no hacer nada
@@ -173,10 +181,10 @@ function interceptCartRequests() {
 
 // 13. Sincronizar cada vez que el carrito local cambie (opcional, por si hay cambios fuera de Shopify)
 function observeCartChanges() {
-  let lastCart = getLocalCart();
+  let lastCart = await getLocalCart();
 
   setInterval(() => {
-    const currentCart = getLocalCart();
+    const currentCart = await getLocalCart();
     if (!cartsAreEqual(currentCart, lastCart)) {
       lastCart = currentCart;
       // Solo sincroniza si el usuario tiene sesión
