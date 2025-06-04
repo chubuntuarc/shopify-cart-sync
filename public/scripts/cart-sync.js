@@ -64,11 +64,14 @@ function getUserIdFromCookie() {
 // 8. Obtener el carrito persistente del backend
 async function fetchBackendCart() {
   try {
-    const response = await fetch(appURL + '/api/cart', {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify({ userId: getUserIdFromCookie() }),
+    const response = await fetch(appURL + "/api/cart", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ userId: customerId }),
     });
     if (response.ok) {
       const data = await response.json();

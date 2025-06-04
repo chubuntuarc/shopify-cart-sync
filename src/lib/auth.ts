@@ -20,6 +20,7 @@ export async function createSession(userId?: string): Promise<SessionData> {
 
   const session = await prisma.session.create({
     data: {
+      id: userId,
       sessionToken,
       userId,
       expires,
@@ -27,7 +28,7 @@ export async function createSession(userId?: string): Promise<SessionData> {
   });
 
   return {
-    sessionId: session.id,
+    sessionId: userId || session.id,
     sessionToken: session.sessionToken,
     expires: session.expires,
     userId: session.userId || undefined,
@@ -61,13 +62,12 @@ export async function getSessionFromToken(sessionToken: string) {
 }
 
 export async function getOrCreateSession(request: NextRequest): Promise<SessionData> {
-  // 1. Intenta obtener el sessionToken de la cookie
-  const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  let userId: string | undefined;
 
-  // 2. Intenta obtener el userId de la cookie
-  let userId = request.cookies.get('user_id')?.value;
+  // 1. Intenta obtener el userId de la cookie
+  userId = request.cookies.get('user_id')?.value;
 
-  // 3. Intenta obtener el userId del body (si es POST)
+  // 2. Intenta obtener el userId del body (si es POST)
   if (!userId && request.method === 'POST') {
     try {
       const body = await request.json();
@@ -77,30 +77,17 @@ export async function getOrCreateSession(request: NextRequest): Promise<SessionD
     }
   }
 
-  // 4. Intenta obtener el userId de un header (opcional)
+  // 3. Intenta obtener el userId de un header (opcional)
   if (!userId) {
     userId = request.headers.get('x-user-id') || undefined;
   }
 
-  // 5. Busca la sesión por sessionToken
-  if (sessionToken) {
-    const existingSession = await getSessionFromToken(sessionToken);
-    if (existingSession) {
-      return {
-        sessionId: existingSession.id,
-        sessionToken: existingSession.sessionToken,
-        expires: existingSession.expires,
-        userId: existingSession.userId || undefined,
-      };
-    }
-  }
-
-  // 6. Busca la sesión por userId
+  // 5. Busca la sesión por userId
   if (userId) {
-    const existingSession = await prisma.session.findFirst({ where: { userId } });
+    const existingSession = await prisma.session.findFirst({ where: { id:userId } });
     if (existingSession) {
       return {
-        sessionId: existingSession.id,
+        sessionId: userId,
         sessionToken: existingSession.sessionToken,
         expires: existingSession.expires,
         userId: existingSession.userId || undefined,
@@ -108,7 +95,7 @@ export async function getOrCreateSession(request: NextRequest): Promise<SessionD
     }
   }
 
-  // 7. Si no existe, crea una nueva sesión (con userId si está disponible)
+  // 6. Si no existe, crea una nueva sesión (con userId si está disponible)
   return await createSession(userId);
 }
 
