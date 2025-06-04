@@ -175,7 +175,7 @@ const cartLoadedPopup = () => {
       margin-top: 0.2rem;
       display: block;
       width: 100%;
-    ">Go to cart</button>
+    ">Show cart</button>
   `;
 
   const style = document.createElement('style');
@@ -188,36 +188,31 @@ const cartLoadedPopup = () => {
   `;
   document.head.appendChild(style);
 
-  popup.querySelector('#cart-reload-btn').onclick = () => window.location.href = '/cart';
+  if (window.location.pathname === '/cart') {
+    popup.querySelector('#cart-reload-btn').onclick = () => window.location.reload();
+  } else {
+    popup.querySelector('#cart-reload-btn').onclick = () => window.location.href = '/cart';
+  }
 
   backdrop.appendChild(popup);
   document.body.appendChild(backdrop);
 };
 
 async function syncCart() {
-  console.log("syncCart");
   customerId = getCustomerId();
-  console.log("customerId", customerId);
   if (!customerId) return;
 
   const localCart = await getLocalCart();
-  console.log("localCart", localCart);
   const backendCart = await fetchBackendCart();
-  console.log("backendCart", backendCart);
-  console.log("firstSyncDone", firstSyncDone);
   if (!firstSyncDone) {
-    console.log("First sync");
     if (backendCart && backendCart.items && backendCart.items.length > 0 && (!localCart || !cartsAreEqual(localCart, backendCart))) {
-      console.log("Replacing Shopify cart with backend cart");
       await replaceShopifyCartWith(backendCart);
-      setLocalCart(backendCart, () => {
-        cartLoadedPopup();
-      });
+      setLocalCart(backendCart);
       firstSyncDone = true;
+      console.log("Cart Loaded ⚡️");
       return;
     }
     if (!backendCart && localCart && localCart.items && localCart.items.length > 0) {
-      console.log("Syncing local cart to backend");
       await syncLocalCartToBackend(localCart);
       firstSyncDone = true;
       return;
@@ -225,9 +220,7 @@ async function syncCart() {
     firstSyncDone = true;
     return;
   } else {
-    console.log("Not first sync");
     if (localCart && backendCart && cartsAreEqual(localCart, backendCart)) {
-      console.log("Local and backend cart are equal");
       return;
     }
 
@@ -238,15 +231,12 @@ async function syncCart() {
       (!backendCart || !cartsAreEqual(localCart, backendCart))
     ) {
       const syncedCart = await syncLocalCartToBackend(localCart);
-      console.log(
-        "Synced cart,  Si el local cambió, sube al backend SOLO si tiene items"
-      );
+      console.log("Cart saved ⚡️");
       if (syncedCart) setLocalCart(syncedCart, null);
       return;
     }
 
     if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
-      console.log("Updating local cart with backend cart");
       setLocalCart(backendCart, null);
       return;
     }
@@ -305,7 +295,7 @@ function updateSessionWithUserId(customerId) {
     body: JSON.stringify({ userId: customerId }),
   }).then(res => {
     if (res.ok) {
-      console.log('Session updated with userId:', customerId);
+      // console.log('Session updated with userId:', customerId);
     }
   }).catch(err => {
     console.error('Error updating session with userId:', err);
@@ -317,7 +307,7 @@ if (customerId) {
   updateSessionWithUserId(customerId);
 }
 
-console.log("Script loaded");
+console.log("🏹 Arco - Cart Sync");
 interceptCartRequests();
 syncCart();
 observeCartChanges();
