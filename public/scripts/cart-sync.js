@@ -125,19 +125,19 @@ async function syncCart() {
 
   // --- PRIMERA CARGA ---
   if (!firstSyncDone) {
-    firstSyncDone = true;
     if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
-      // El backend tiene carrito: reemplaza el local/Shopify
       await replaceShopifyCartWith(backendCart);
       setLocalCart(backendCart);
+      firstSyncDone = true;
       return;
     }
     if (!backendCart && localCart && localCart.items && localCart.items.length > 0) {
-      // El backend NO tiene carrito, pero el local sí: sube el local al backend
       await syncLocalCartToBackend(localCart);
+      firstSyncDone = true;
       return;
     }
     // Si ambos están vacíos, no hacer nada
+    firstSyncDone = true;
     return;
   }
 
@@ -247,16 +247,31 @@ async function replaceShopifyCartWith(cart) {
   // 2. Add all items from backend cart
   if (cart && cart.items && cart.items.length > 0) {
     const items = cart.items.map(item => ({
-      id: item.shopifyVariantId || item.variantId || item.variant_id, // adapt as needed
+      id: item.shopifyVariantId || item.variantId || item.variant_id,
       quantity: item.quantity,
       properties: item.properties || undefined,
     }));
     await fetch('/cart/add.js', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ items }),
     });
   }
+
+  // 3. Espera a que el carrito de Shopify refleje los cambios
+  await waitForShopifyCartToMatch(cart);
+}
+
+async function waitForShopifyCartToMatch(targetCart, maxTries = 10, delay = 300) {
+  for (let i = 0; i < maxTries; i++) {
+    const currentCart = await getLocalCart();
+    if (cartsAreEqual(currentCart, targetCart)) {
+      return;
+    }
+    await new Promise(res => setTimeout(res, delay));
+  }
+  console.warn('Shopify cart did not match backend cart after waiting.');
 }
 
 })();
