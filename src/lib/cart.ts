@@ -55,12 +55,6 @@ export class CartService {
       const variantId = String(item.variant_id);
       const existingItem = dbItems.find(i => i.shopifyVariantId === variantId);
 
-      // Try to get variant info from Shopify (optional, for extra data)
-      let variantData = await this.getVariantFromShopify(variantId);
-      if (!variantData) {
-        variantData = this.getMockVariantData(variantId);
-      }
-
       if (existingItem) {
         // Update quantity and price if needed
         await prisma.cartItem.update({
@@ -76,14 +70,14 @@ export class CartService {
           data: {
             cartId: cart.id,
             shopifyVariantId: variantId,
-            productId: variantData.product.id,
-            title: variantData.product.title,
-            variant_title: variantData.title,
+            productId: item.product_id,
+            title: item.title,
+            variant_title: item.variant_title,
             price: item.price / 100,
             quantity: item.quantity,
-            image: this.getVariantImageUrl(variantData),
-            product_handle: variantData.product.handle,
-            sku: variantData.sku,
+            image: item.image,
+            product_handle: item.handle,
+            sku: item.sku,
           },
         });
       }
