@@ -233,7 +233,7 @@ async function replaceShopifyCartWith(cart) {
   // 2. Add all items from backend cart
   if (cart && cart.items && cart.items.length > 0) {
     const items = cart.items.map(item => ({
-      id: item.variant_id || item.variantId || item.variant_id, // adapt as needed
+      id: item.shopifyVariantId || item.variantId || item.variant_id, // adapt as needed
       quantity: item.quantity,
       properties: item.properties || undefined,
     }));
