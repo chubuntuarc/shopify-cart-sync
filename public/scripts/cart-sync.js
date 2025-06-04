@@ -110,10 +110,12 @@ function cartsAreEqual(cartA, cartB) {
 // 11. Lógica principal de sincronización
 async function syncCart() {
   console.log('syncCart');
-  if (!isUserLoggedIn()) return;
+  if (!customerId) return;
 
   const localCart = getLocalCart();
   const backendCart = await fetchBackendCart();
+  console.log('localCart', localCart);
+  console.log('backendCart', backendCart);
 
   // Si ambos existen y son iguales, no hacer nada
   if (localCart && backendCart && cartsAreEqual(localCart, backendCart)) {
