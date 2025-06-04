@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import { shopifyClient, GET_VARIANT_BY_ID, CREATE_CHECKOUT, UPDATE_CHECKOUT } from './shopify';
-import type { Cart, CartItem, AddToCartRequest } from '@/types';
+import type { Cart, AddToCartRequest } from '@/types';
 
 export class CartService {
   static async getOrCreateCart(sessionId: string): Promise<Cart> {
@@ -29,56 +29,67 @@ export class CartService {
     return this.formatCart(cart);
   }
 
-  static async addToCart(sessionId: string, item: AddToCartRequest): Promise<Cart> {
+  static async addToCart(sessionId: string, shopifyCart: any): Promise<Cart> {
     const cart = await this.getOrCreateCart(sessionId);
-    
-    // Try to get variant information from Shopify, fall back to mock data
-    let variantData = await this.getVariantFromShopify(item.variantId);
-    
-    if (!variantData) {
-      // Use mock data for development when Shopify is not configured
-      variantData = this.getMockVariantData(item.variantId);
-    }
 
-    // Check if item already exists in cart
-    const existingItem = await prisma.cartItem.findUnique({
-      where: {
-        cartId_shopifyVariantId: {
-          cartId: cart.id,
-          shopifyVariantId: item.variantId,
-        },
-      },
+    // 1. Get all current items in your DB cart
+    const dbItems = await prisma.cartItem.findMany({
+      where: { cartId: cart.id },
     });
 
-    if (existingItem) {
-      // Update quantity
-      await prisma.cartItem.update({
-        where: {
-          id: existingItem.id,
-        },
-        data: {
-          quantity: existingItem.quantity + item.quantity,
-        },
-      });
-    } else {
-      // Create new item
-      await prisma.cartItem.create({
-        data: {
-          cartId: cart.id,
-          shopifyVariantId: item.variantId,
-          productId: variantData.product.id,
-          title: variantData.product.title,
-          variant_title: variantData.title,
-          price: parseFloat(variantData.price.toString()),
-          quantity: item.quantity,
-          image: this.getVariantImageUrl(variantData),
-          product_handle: variantData.product.handle,
-          sku: variantData.sku,
-        },
-      });
+    // 2. Build a map of Shopify cart items by variantId
+    const shopifyItemsMap = new Map<string, any>();
+    for (const item of shopifyCart.items || []) {
+      shopifyItemsMap.set(String(item.variant_id), item);
     }
 
-    // Update cart and sync with Shopify
+    // 3. Remove items from DB cart that are not in Shopify cart
+    for (const dbItem of dbItems) {
+      if (!shopifyItemsMap.has(dbItem.shopifyVariantId)) {
+        await prisma.cartItem.delete({ where: { id: dbItem.id } });
+      }
+    }
+
+    // 4. Add or update items from Shopify cart
+    for (const item of shopifyCart.items || []) {
+      const variantId = String(item.variant_id);
+      const existingItem = dbItems.find(i => i.shopifyVariantId === variantId);
+
+      // Try to get variant info from Shopify (optional, for extra data)
+      let variantData = await this.getVariantFromShopify(variantId);
+      if (!variantData) {
+        variantData = this.getMockVariantData(variantId);
+      }
+
+      if (existingItem) {
+        // Update quantity and price if needed
+        await prisma.cartItem.update({
+          where: { id: existingItem.id },
+          data: {
+            quantity: item.quantity,
+            price: item.price / 100,
+          },
+        });
+      } else {
+        // Create new item
+        await prisma.cartItem.create({
+          data: {
+            cartId: cart.id,
+            shopifyVariantId: variantId,
+            productId: variantData.product.id,
+            title: variantData.product.title,
+            variant_title: variantData.title,
+            price: item.price / 100,
+            quantity: item.quantity,
+            image: this.getVariantImageUrl(variantData),
+            product_handle: variantData.product.handle,
+            sku: variantData.sku,
+          },
+        });
+      }
+    }
+
+    // 5. Update cart totals and return
     return await this.updateCartTotals(cart.id);
   }
 
