@@ -103,7 +103,16 @@ function DashboardContent() {
                     <span>Store: {shopData.name}</span>
                   </div>
                   <div className="mt-2 flex items-center text-sm text-gray-500">
-                    <span>Domain: {shopData.domain}</span>
+                    <span>
+                      Domain:{" "}
+                      <a
+                        href={`https://${shopData.domain}/admin`}
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        {shopData.domain}
+                      </a>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -216,6 +225,56 @@ function DashboardContent() {
               </div>
             </div>
 
+            {/* Code Snippe Install Instructions */}
+            <div className="mt-8">
+              <div className="bg-white shadow overflow-hidden sm:rounded-md">
+                <div className="px-4 py-5 sm:p-6">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">
+                    Install Instructions
+                  </h3>
+                  <div className="mt-5 space-y-4">
+                    <p className="text-sm text-gray-500">
+                      To enable persistent cart sync, add the following code to
+                      your <b>theme.liquid</b> file, inside the{" "}
+                      <b>&lt;head&gt;</b> section:
+                    </p>
+                    <pre className="bg-gray-100 rounded p-3 text-xs overflow-x-auto">
+                      {`<!-- Arco - Persistent Cart Sync -->
+<script>window.CUSTOMER_ID = {{ customer.id }}</script>
+<!-- End Arco - Persistent Cart Sync -->`}
+                    </pre>
+                    <ol className="list-decimal list-inside text-sm text-gray-500 space-y-1">
+                      <li>
+                        Go to <b>Online Store → Themes</b> in your Shopify
+                        admin.
+                      </li>
+                      <li>
+                        Click <b>Actions → Edit code</b> on your current theme.
+                      </li>
+                      <li>
+                        Open <b>layout/theme.liquid</b>.
+                      </li>
+                      <li>
+                        Paste the code above just before the closing{" "}
+                        <b>&lt;/head&gt;</b> tag.
+                      </li>
+                      <li>
+                        Click <b>Save</b>.
+                      </li>
+                    </ol>
+                    <div className="mt-6 flex justify-center">
+                      <img
+                        src="/setup_screen.png"
+                        alt="Shopify theme.liquid setup screenshot"
+                        className="rounded border border-gray-200 shadow max-w-full h-auto"
+                        style={{maxWidth: '600px'}}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Features Section */}
             <div className="mt-8">
               <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -253,7 +312,7 @@ function DashboardContent() {
                         </div>
                       </div>
 
-                      <div className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3">
+                      {/* <div className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                             <svg
@@ -279,7 +338,7 @@ function DashboardContent() {
                             JWT-based authentication with device tracking
                           </p>
                         </div>
-                      </div>
+                      </div> */}
 
                       <div className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3">
                         <div className="flex-shrink-0">
@@ -309,7 +368,7 @@ function DashboardContent() {
                         </div>
                       </div>
 
-                      <div className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3">
+                      {/* <div className="relative rounded-lg border border-gray-300 bg-white px-6 py-5 shadow-sm flex items-center space-x-3">
                         <div className="flex-shrink-0">
                           <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center">
                             <svg
@@ -335,7 +394,7 @@ function DashboardContent() {
                             Track cart abandonment and recovery metrics
                           </p>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                   </div>
                 </div>
