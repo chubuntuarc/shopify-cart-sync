@@ -125,31 +125,29 @@ async function syncCart() {
   const localCart = await getLocalCart();
   const backendCart = await fetchBackendCart();
 
-  // --- PRIMERA CARGA: Si hay backendCart, reemplaza el local y marca la bandera ---
+  // --- FIRST LOAD: If backendCart exists, replace local cart and Shopify cart ---
   if (!firstSyncDone) {
-    console.log("firstSyncDone", firstSyncDone);
     firstSyncDone = true;
     if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
-      console.log("backendCart", backendCart);
-      setLocalCart(backendCart);
+      await replaceShopifyCartWith(backendCart); // This updates the actual Shopify cart
+      setLocalCart(backendCart); // Optionally update localStorage
       return;
     }
   }
 
-  // --- Lógica normal después de la primera carga ---
-  // Si ambos existen y son iguales, no hacer nada
+  // --- Normal sync after first load ---
   if (localCart && backendCart && cartsAreEqual(localCart, backendCart)) {
     return;
   }
 
-  // Si el local existe y el backend no, o el local es diferente, subir el local
+  // If the local cart changed (user action), push to backend
   if (localCart && (!backendCart || !cartsAreEqual(localCart, backendCart))) {
     const syncedCart = await syncLocalCartToBackend(localCart);
     if (syncedCart) setLocalCart(syncedCart);
     return;
   }
 
-  // Si el backend existe y el local no, o el backend es diferente, actualizar el local
+  // If backend cart changed (shouldn't happen after first load, but just in case)
   if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
     setLocalCart(backendCart);
     return;
@@ -227,5 +225,25 @@ console.log("Script loaded");
 interceptCartRequests();
 syncCart();
 observeCartChanges();
+
+async function replaceShopifyCartWith(cart) {
+  // 1. Clear the cart
+  await fetch('/cart/clear.js', { method: 'POST', credentials: 'include' });
+
+  // 2. Add all items from backend cart
+  if (cart && cart.items && cart.items.length > 0) {
+    const items = cart.items.map(item => ({
+      id: item.variant_id || item.variantId || item.variant_id, // adapt as needed
+      quantity: item.quantity,
+      properties: item.properties || undefined,
+    }));
+    await fetch('/cart/add.js', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ items }),
+    });
+  }
+}
 
 })();
