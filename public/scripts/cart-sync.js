@@ -1,6 +1,7 @@
 (function() {
   const appURL = "https://arco-henna.vercel.app";
   let customerId = null;
+  let firstSyncDone = false;
 // Sync cart with Shopify
 
 // 1. Obtener el customerId desde window.CUSTOMER_ID (inyectado por Liquid)
@@ -62,13 +63,6 @@ function setLocalCart(cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
   }
 }
-
-// Obtener el userId desde la cookie
-function getUserIdFromCookie() {
-  const match = document.cookie.match(/(?:^|;\s*)user_id=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
-}
-
 // 8. Obtener el carrito persistente del backend
 async function fetchBackendCart() {
   if (!customerId) return null;
@@ -131,6 +125,16 @@ async function syncCart() {
   const localCart = await getLocalCart();
   const backendCart = await fetchBackendCart();
 
+  // --- PRIMERA CARGA: Si hay backendCart, reemplaza el local y marca la bandera ---
+  if (!firstSyncDone) {
+    firstSyncDone = true;
+    if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
+      setLocalCart(backendCart);
+      return;
+    }
+  }
+
+  // --- Lógica normal después de la primera carga ---
   // Si ambos existen y son iguales, no hacer nada
   if (localCart && backendCart && cartsAreEqual(localCart, backendCart)) {
     return;
