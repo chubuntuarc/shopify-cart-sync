@@ -117,21 +117,28 @@ function cartsAreEqual(cartA, cartB) {
 
 // 11. Lógica principal de sincronización
 async function syncCart() {
+  console.log("syncCart");
   customerId = getCustomerId();
+  console.log("customerId", customerId);
   if (!customerId) return;
 
   const localCart = await getLocalCart();
+  console.log("localCart", localCart);
   const backendCart = await fetchBackendCart();
-
+  console.log("backendCart", backendCart);
   // --- PRIMERA CARGA ---
+  console.log("firstSyncDone", firstSyncDone);
   if (!firstSyncDone) {
+    console.log("First sync");
     if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
+      console.log("Replacing Shopify cart with backend cart");
       await replaceShopifyCartWith(backendCart);
       setLocalCart(backendCart);
       firstSyncDone = true;
       return;
     }
     if (!backendCart && localCart && localCart.items && localCart.items.length > 0) {
+      console.log("Syncing local cart to backend");
       await syncLocalCartToBackend(localCart);
       firstSyncDone = true;
       return;
@@ -139,29 +146,35 @@ async function syncCart() {
     // Si ambos están vacíos, no hacer nada
     firstSyncDone = true;
     return;
-  }
+  } else {
+    console.log("Not first sync");
+    // --- Lógica normal después de la primera carga ---
+    if (localCart && backendCart && cartsAreEqual(localCart, backendCart)) {
+      console.log("Local and backend cart are equal");
+      return;
+    }
 
-  // --- Lógica normal después de la primera carga ---
-  if (localCart && backendCart && cartsAreEqual(localCart, backendCart)) {
-    return;
-  }
+    // Si el local cambió, sube al backend SOLO si tiene items
+    if (
+      localCart &&
+      localCart.items &&
+      localCart.items.length > 0 &&
+      (!backendCart || !cartsAreEqual(localCart, backendCart))
+    ) {
+      const syncedCart = await syncLocalCartToBackend(localCart);
+      console.log(
+        "Synced cart,  Si el local cambió, sube al backend SOLO si tiene items"
+      );
+      if (syncedCart) setLocalCart(syncedCart);
+      return;
+    }
 
-  // Si el local cambió, sube al backend SOLO si tiene items
-  if (
-    localCart &&
-    localCart.items &&
-    localCart.items.length > 0 &&
-    (!backendCart || !cartsAreEqual(localCart, backendCart))
-  ) {
-    const syncedCart = await syncLocalCartToBackend(localCart);
-    if (syncedCart) setLocalCart(syncedCart);
-    return;
-  }
-
-  // Si el backend cambió (raro después de la primera carga), actualiza el local
-  if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
-    setLocalCart(backendCart);
-    return;
+    // Si el backend cambió (raro después de la primera carga), actualiza el local
+    if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
+      console.log("Updating local cart with backend cart");
+      setLocalCart(backendCart);
+      return;
+    }
   }
 }
 
