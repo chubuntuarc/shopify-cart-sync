@@ -386,6 +386,7 @@ export class CartService {
         data: cartData,
       });
     }
-    return this.formatCart(cart);
+    const cartItems = await prisma.cartItem.findMany({ where: { cartId: cart.id } });
+    return this.formatCart({ ...cart, items: cartItems });
   }
 }
