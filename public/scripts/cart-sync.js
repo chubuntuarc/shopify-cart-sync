@@ -175,7 +175,7 @@ function interceptCartRequests() {
   const originalOpen = window.XMLHttpRequest.prototype.open;
   window.XMLHttpRequest.prototype.open = function(method, url, ...rest) {
     this.addEventListener('load', function() {
-      if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/) && !firstSyncDone) {
+      if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/) && firstSyncDone) {
         setTimeout(() => {
           syncCart();
         }, 500);
