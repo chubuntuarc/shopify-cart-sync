@@ -69,7 +69,6 @@ async function fetchBackendCart() {
   try {
     const response = await fetch(appURL + "/api/cart", {
       method: "POST",
-      credentials: "include",
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -95,7 +94,6 @@ async function syncLocalCartToBackend(cart) {
   try {
     const response = await fetch(appURL + '/api/cart', {
       method: 'POST',
-      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: customerId,
@@ -203,7 +201,6 @@ function updateSessionWithUserId(customerId) {
   if (!customerId) return;
   fetch(appURL + '/api/session/update', {
     method: 'POST',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId: customerId }),
   }).then(res => {
@@ -239,7 +236,6 @@ async function replaceShopifyCartWith(cart) {
     }));
     await fetch('/cart/add.js', {
       method: 'POST',
-      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ items }),
     });
