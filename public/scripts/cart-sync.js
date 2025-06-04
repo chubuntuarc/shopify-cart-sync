@@ -180,16 +180,16 @@ function interceptCartRequests() {
 }
 
 // 13. Sincronizar cada vez que el carrito local cambie (opcional, por si hay cambios fuera de Shopify)
-function observeCartChanges() {
+async function observeCartChanges() {
   let lastCart = await getLocalCart();
 
-  setInterval(() => {
+  setInterval(async () => {
     const currentCart = await getLocalCart();
     if (!cartsAreEqual(currentCart, lastCart)) {
       lastCart = currentCart;
       // Solo sincroniza si el usuario tiene sesión
       if (isUserLoggedIn()) {
-        syncLocalCartToBackend(currentCart);
+        await syncLocalCartToBackend(currentCart);
       }
     }
   }, 2000); // Chequea cada 2 segundos (ajusta el intervalo si lo deseas)
