@@ -2,44 +2,35 @@
   const appURL = "https://arco-henna.vercel.app";
   let customerId = null;
   let firstSyncDone = false;
-// Sync cart with Shopify
 
-// 1. Obtener el customerId desde window.CUSTOMER_ID (inyectado por Liquid)
 function getCustomerId() {
   return typeof window !== 'undefined' && window.CUSTOMER_ID ? String(window.CUSTOMER_ID) : null;
 }
 
-// 2. Guardar el customerId en una cookie (si está logueado)
 function setUserIdCookie(customerId) {
   if (customerId) {
     document.cookie = `user_id=${customerId}; path=/; SameSite=Lax`;
   } else {
-    // Si no hay customerId, borra la cookie
     document.cookie = 'user_id=; Max-Age=0; path=/; SameSite=Lax';
   }
 }
 
-// 3. Lógica para mantener la cookie actualizada
 function syncUserIdCookie() {
   customerId = getCustomerId();
   setUserIdCookie(customerId);
 }
 
-// Llama al inicio y cada vez que cambie el estado de login (opcional: puedes usar un observer)
 syncUserIdCookie();
 
-// 4. Obtener el token de sesión desde la cookie
 function getSessionToken() {
   const match = document.cookie.match(/(?:^|;\s*)persistent_cart_session=([^;]*)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
 
-// 5. Verificar si el usuario tiene sesión activa
 function isUserLoggedIn() {
   return !!getSessionToken();
 }
 
-// 6. Obtener el carrito local
 async function getLocalCart() {
   try {
     const response = await fetch('/cart.js', {
@@ -57,13 +48,11 @@ async function getLocalCart() {
   return null;
 }
 
-// 7. Guardar el carrito en localStorage
 function setLocalCart(cart) {
   if (cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
   }
 }
-// 8. Obtener el carrito persistente del backend
 async function fetchBackendCart() {
   if (!customerId) return null;
   try {
@@ -83,7 +72,6 @@ async function fetchBackendCart() {
   return null;
 }
 
-// 9. Subir el carrito local al backend
 async function syncLocalCartToBackend(cart) {
   if (!customerId) return null;
   try {
@@ -105,24 +93,20 @@ async function syncLocalCartToBackend(cart) {
   return null;
 }
 
-// 10. Comparar carritos
 function cartsAreEqual(cartA, cartB) {
   return JSON.stringify(cartA) === JSON.stringify(cartB);
 }
 
 const cartLoadedPopup = () => {
-  // Remove any existing popup
   const existing = document.querySelector('.cart-loaded-popup-backdrop');
   if (existing) existing.remove();
 
-  // Create backdrop (transparent, only for z-index stacking)
   const backdrop = document.createElement('div');
   backdrop.className = 'cart-loaded-popup-backdrop';
   backdrop.style.cssText = `
     position: fixed; z-index: 9999; inset: 0; pointer-events: none;
   `;
 
-  // Create popup
   const popup = document.createElement('div');
   popup.className = 'cart-loaded-popup';
   popup.style.cssText = `
@@ -142,7 +126,6 @@ const cartLoadedPopup = () => {
     font-family: inherit;
   `;
 
-  // Add close button
   const closeBtn = document.createElement('button');
   closeBtn.innerHTML = '&times;';
   closeBtn.setAttribute('aria-label', 'Close');
@@ -187,7 +170,6 @@ const cartLoadedPopup = () => {
     ">Go to cart</button>
   `;
 
-  // Add fade-in keyframes
   const style = document.createElement('style');
   style.innerHTML = `
     @keyframes fadeIn {
@@ -198,15 +180,12 @@ const cartLoadedPopup = () => {
   `;
   document.head.appendChild(style);
 
-  // Button event
   popup.querySelector('#cart-reload-btn').onclick = () => window.location.href = '/cart';
 
-  // Append
   backdrop.appendChild(popup);
   document.body.appendChild(backdrop);
 };
 
-// 11. Lógica principal de sincronización
 async function syncCart() {
   console.log("syncCart");
   customerId = getCustomerId();
@@ -217,7 +196,6 @@ async function syncCart() {
   console.log("localCart", localCart);
   const backendCart = await fetchBackendCart();
   console.log("backendCart", backendCart);
-  // --- PRIMERA CARGA ---
   console.log("firstSyncDone", firstSyncDone);
   if (!firstSyncDone) {
     console.log("First sync");
@@ -226,7 +204,6 @@ async function syncCart() {
       await replaceShopifyCartWith(backendCart);
       setLocalCart(backendCart);
       firstSyncDone = true;
-      cartLoadedPopup();
       return;
     }
     if (!backendCart && localCart && localCart.items && localCart.items.length > 0) {
@@ -235,18 +212,15 @@ async function syncCart() {
       firstSyncDone = true;
       return;
     }
-    // Si ambos están vacíos, no hacer nada
     firstSyncDone = true;
     return;
   } else {
     console.log("Not first sync");
-    // --- Lógica normal después de la primera carga ---
     if (localCart && backendCart && cartsAreEqual(localCart, backendCart)) {
       console.log("Local and backend cart are equal");
       return;
     }
 
-    // Si el local cambió, sube al backend SOLO si tiene items
     if (
       localCart &&
       localCart.items &&
@@ -261,7 +235,6 @@ async function syncCart() {
       return;
     }
 
-    // Si el backend cambió (raro después de la primera carga), actualiza el local
     if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
       console.log("Updating local cart with backend cart");
       setLocalCart(backendCart);
@@ -270,22 +243,18 @@ async function syncCart() {
   }
 }
 
-// 12. Detectar cambios en el carrito interceptando fetch/XMLHttpRequest
 function interceptCartRequests() {
-  // Interceptar fetch
   const originalFetch = window.fetch;
   window.fetch = function(...args) {
     let url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
     if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/) && firstSyncDone) {
       setTimeout(() => {
-        // Espera a que el carrito se actualice en Shopify antes de sincronizar
         syncCart();
       }, 500);
     }
     return originalFetch.apply(this, args);
   };
 
-  // Interceptar XMLHttpRequest
   const originalOpen = window.XMLHttpRequest.prototype.open;
   window.XMLHttpRequest.prototype.open = function(method, url, ...rest) {
     this.addEventListener('load', function() {
@@ -299,7 +268,6 @@ function interceptCartRequests() {
   };
 }
 
-// 13. Sincronizar cada vez que el carrito local cambie (opcional, por si hay cambios fuera de Shopify)
 async function observeCartChanges() {
   let lastCart = await getLocalCart();
 
@@ -316,7 +284,7 @@ async function observeCartChanges() {
         await syncLocalCartToBackend(currentCart);
       }
     }
-  }, 2000); // Chequea cada 2 segundos (ajusta el intervalo si lo deseas)
+  }, 2000);
 }
 
 function updateSessionWithUserId(customerId) {
@@ -334,7 +302,6 @@ function updateSessionWithUserId(customerId) {
   });
 }
 
-// Llama a esta función cuando detectes o cambie el CUSTOMER_ID
 customerId = getCustomerId();
 if (customerId) {
   updateSessionWithUserId(customerId);
@@ -346,10 +313,8 @@ syncCart();
 observeCartChanges();
 
 async function replaceShopifyCartWith(cart) {
-  // 1. Clear the cart
   await fetch('/cart/clear.js', { method: 'POST', credentials: 'include' });
 
-  // 2. Add all items from backend cart
   if (cart && cart.items && cart.items.length > 0) {
     const items = cart.items.map(item => ({
       id: item.shopifyVariantId || item.variantId || item.variant_id,
@@ -362,9 +327,9 @@ async function replaceShopifyCartWith(cart) {
       credentials: 'include',
       body: JSON.stringify({ items }),
     });
+    cartLoadedPopup();
   }
 
-  // 3. Espera a que el carrito de Shopify refleje los cambios
   await waitForShopifyCartToMatch(cart);
 }
 

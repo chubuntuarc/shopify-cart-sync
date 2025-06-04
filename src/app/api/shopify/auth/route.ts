@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
       await registerShopifyScriptTag(
         shop,
         tokenData.access_token,
-        `${APP_URL}/scripts/cart-sync.js`
+        `${APP_URL}/scripts/cart-sync.min.js`
       );
       console.log('ScriptTag registered');  
     } catch (err) {
