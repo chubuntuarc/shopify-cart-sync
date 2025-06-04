@@ -63,6 +63,7 @@ function getUserIdFromCookie() {
 
 // 8. Obtener el carrito persistente del backend
 async function fetchBackendCart() {
+  if (!customerId) return null;
   try {
     const response = await fetch(appURL + "/api/cart", {
       method: "POST",
@@ -71,7 +72,10 @@ async function fetchBackendCart() {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({ userId: customerId }),
+      body: JSON.stringify({
+        userId: customerId,
+        cartData: {} // Para compatibilidad, aunque no se use en GET/POST de consulta
+      }),
     });
     if (response.ok) {
       const data = await response.json();
@@ -85,12 +89,16 @@ async function fetchBackendCart() {
 
 // 9. Subir el carrito local al backend
 async function syncLocalCartToBackend(cart) {
+  if (!customerId) return null;
   try {
-    const response = await fetch(appURL + '/api/cart/sync', {
+    const response = await fetch(appURL + '/api/cart', {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...cart, userId: customerId }),
+      body: JSON.stringify({
+        userId: customerId,
+        cartData: cart || {}
+      }),
     });
     if (response.ok) {
       const data = await response.json();
@@ -109,13 +117,11 @@ function cartsAreEqual(cartA, cartB) {
 
 // 11. Lógica principal de sincronización
 async function syncCart() {
-  console.log('syncCart');
+  customerId = getCustomerId();
   if (!customerId) return;
 
   const localCart = getLocalCart();
   const backendCart = await fetchBackendCart();
-  console.log('localCart', localCart);
-  console.log('backendCart', backendCart);
 
   // Si ambos existen y son iguales, no hacer nada
   if (localCart && backendCart && cartsAreEqual(localCart, backendCart)) {

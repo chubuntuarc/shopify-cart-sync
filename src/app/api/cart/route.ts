@@ -48,17 +48,24 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { cartData, userId } = body;
 
+  if (!cartData) {
+    return NextResponse.json(
+      { success: false, error: 'Missing cartData' },
+      { status: 400, headers: getCorsHeaders(request.headers.get('origin')) }
+    );
+  }
+
+  const { variantId, quantity, properties } = cartData;
+
+  if (!variantId || !quantity) {
+    return NextResponse.json(
+      { success: false, error: 'Missing variantId or quantity' },
+      { status: 400, headers: getCorsHeaders(request.headers.get('origin')) }
+    );
+  }
+
   try {
     const sessionData = await getOrCreateSession(userId);
-    const { variantId, quantity, properties } = cartData;
-
-    if (!variantId || !quantity) {
-      return NextResponse.json(
-        { success: false, error: 'Missing variantId or quantity' },
-        { status: 400, headers: getCorsHeaders(request.headers.get('origin')) }
-      );
-    }
-
     const cart = await CartService.addToCart(sessionData.sessionId, {
       variantId,
       quantity: parseInt(quantity),
