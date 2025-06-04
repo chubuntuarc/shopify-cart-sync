@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrCreateSession } from '@/lib/auth';
 import { CartService } from '@/lib/cart';
 
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  return {
+    'Access-Control-Allow-Origin': origin || '',
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
 export async function POST(request: NextRequest) {
   const { cartData, userId } = await request.json();
   try {
@@ -26,12 +36,12 @@ export async function POST(request: NextRequest) {
       success: true,
       cart: updatedCart,
       checkoutUrl: updatedCart.checkoutUrl,
-    });
+    }, getCorsHeaders(request.headers.get('origin')));
   } catch (error) {
     console.error('Error syncing cart:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to sync cart with Shopify' },
-      { status: 500 }
+      { status: 500, headers: getCorsHeaders(request.headers.get('origin')) }
     );
   }
 } 

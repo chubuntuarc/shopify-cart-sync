@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getOrCreateSession } from '@/lib/auth';
 import { CartService } from '@/lib/cart';
 
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  // Solo permite orígenes válidos (aquí permitimos todos, pero nunca '*')
+  return {
+    'Access-Control-Allow-Origin': origin || '', // nunca '*'
+    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Credentials': 'true',
+  };
+}
+
 export async function GET(request: NextRequest) {
   const { userId } = await request.json();
   try {
@@ -15,12 +25,12 @@ export async function GET(request: NextRequest) {
       success: true,
       cart,
       userId: userId || null,
-    });
+    }, getCorsHeaders(request.headers.get('origin')));
   } catch (error) {
     console.error('Error getting cart:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to get cart' },
-      { status: 500 }
+      { status: 500, headers: getCorsHeaders(request.headers.get('origin')) }
     );
   }
 }
@@ -34,7 +44,7 @@ export async function POST(request: NextRequest) {
     if (!variantId || !quantity) {
       return NextResponse.json(
         { success: false, error: 'Missing variantId or quantity' },
-        { status: 400 }
+        { status: 400, headers: getCorsHeaders(request.headers.get('origin')) }
       );
     }
 
@@ -47,12 +57,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       cart,
-    });
+    }, getCorsHeaders(request.headers.get('origin')));
   } catch (error) {
     console.error('Error adding to cart:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to add to cart' },
-      { status: 500 }
+      { status: 500, headers: getCorsHeaders(request.headers.get('origin')) }
     );
   }
 }
@@ -65,12 +75,12 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({
       success: true,
       cart,
-    });
+    }, getCorsHeaders(request.headers.get('origin')));
   } catch (error) {
     console.error('Error clearing cart:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to clear cart' },
-      { status: 500 }
+      { status: 500, headers: getCorsHeaders(request.headers.get('origin')) }
     );
   }
 } 
