@@ -67,16 +67,11 @@ function setLocalCart(cart) {
 async function fetchBackendCart() {
   if (!customerId) return null;
   try {
-    const response = await fetch(appURL + "/api/cart", {
-      method: "POST",
+    const response = await fetch(`${appURL}/api/cart?userId=${encodeURIComponent(customerId)}`, {
+      method: "GET",
       headers: {
-        "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({
-        userId: customerId,
-        cartData: {} // Para compatibilidad, aunque no se use en GET/POST de consulta
-      }),
     });
     if (response.ok) {
       const data = await response.json();

@@ -21,14 +21,15 @@ export async function OPTIONS(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const { userId } = await request.json();
+  const { searchParams } = new URL(request.url);
+  const userId = searchParams.get('userId');
   try {
     const cart = await CartService.getOrCreateCartByUserId({
-        userId,
-        shopifyCartId: null,
-        checkoutUrl: null,
-      }, userId)
-    
+      userId,
+      shopifyCartId: null,
+      checkoutUrl: null,
+    }, userId ?? '');
+
     return NextResponse.json({
       success: true,
       cart,
