@@ -130,7 +130,7 @@ async function syncCart() {
   console.log("firstSyncDone", firstSyncDone);
   if (!firstSyncDone) {
     console.log("First sync");
-    if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
+    if (backendCart && backendCart.items && backendCart.items.length > 0 && (!localCart || !cartsAreEqual(localCart, backendCart))) {
       console.log("Replacing Shopify cart with backend cart");
       await replaceShopifyCartWith(backendCart);
       setLocalCart(backendCart);
