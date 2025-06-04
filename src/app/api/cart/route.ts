@@ -6,10 +6,19 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   // Solo permite orígenes válidos (aquí permitimos todos, pero nunca '*')
   return {
     'Access-Control-Allow-Origin': origin || '', // nunca '*'
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
     'Access-Control-Allow-Credentials': 'true',
   };
+}
+
+// Handler para preflight CORS
+export async function OPTIONS(request: NextRequest) {
+  const origin = request.headers.get('origin');
+  return new NextResponse(null, {
+    status: 204,
+    headers: getCorsHeaders(origin),
+  });
 }
 
 export async function GET(request: NextRequest) {
