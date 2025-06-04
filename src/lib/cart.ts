@@ -70,7 +70,7 @@ export class CartService {
           data: {
             cartId: cart.id,
             shopifyVariantId: variantId,
-            productId: item.product_id,
+            productId: String(item.product_id),
             title: item.title,
             variant_title: item.variant_title,
             price: item.price / 100,
