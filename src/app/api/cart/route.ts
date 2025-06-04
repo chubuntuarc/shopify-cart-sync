@@ -5,10 +5,11 @@ import { CartService } from '@/lib/cart';
 export async function GET(request: NextRequest) {
   const { userId } = await request.json();
   try {
-    const sessionData = await getOrCreateSession(request);
-    const cart = userId
-      ? await CartService.getOrCreateCartByUserId(userId)
-      : await CartService.getOrCreateCart(sessionData.sessionId);
+    const cart = await CartService.getOrCreateCartByUserId({
+        userId,
+        shopifyCartId: null,
+        checkoutUrl: null,
+      }, userId)
     
     return NextResponse.json({
       success: true,
