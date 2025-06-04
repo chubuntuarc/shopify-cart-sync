@@ -123,29 +123,37 @@ async function syncCart() {
   const localCart = await getLocalCart();
   const backendCart = await fetchBackendCart();
 
-  // --- FIRST LOAD: If backendCart exists, replace local cart and Shopify cart ---
+  // --- PRIMERA CARGA ---
   if (!firstSyncDone) {
     firstSyncDone = true;
     if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
-      await replaceShopifyCartWith(backendCart); // This updates the actual Shopify cart
-      setLocalCart(backendCart); // Optionally update localStorage
+      // El backend tiene carrito: reemplaza el local/Shopify
+      await replaceShopifyCartWith(backendCart);
+      setLocalCart(backendCart);
       return;
     }
+    if (!backendCart && localCart && localCart.items && localCart.items.length > 0) {
+      // El backend NO tiene carrito, pero el local sí: sube el local al backend
+      await syncLocalCartToBackend(localCart);
+      return;
+    }
+    // Si ambos están vacíos, no hacer nada
+    return;
   }
 
-  // --- Normal sync after first load ---
+  // --- Lógica normal después de la primera carga ---
   if (localCart && backendCart && cartsAreEqual(localCart, backendCart)) {
     return;
   }
 
-  // If the local cart changed (user action), push to backend
+  // Si el local cambió, sube al backend
   if (localCart && (!backendCart || !cartsAreEqual(localCart, backendCart))) {
     const syncedCart = await syncLocalCartToBackend(localCart);
     if (syncedCart) setLocalCart(syncedCart);
     return;
   }
 
-  // If backend cart changed (shouldn't happen after first load, but just in case)
+  // Si el backend cambió (raro después de la primera carga), actualiza el local
   if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
     setLocalCart(backendCart);
     return;
