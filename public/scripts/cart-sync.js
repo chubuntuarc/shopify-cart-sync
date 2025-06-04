@@ -166,7 +166,7 @@ function interceptCartRequests() {
   const originalFetch = window.fetch;
   window.fetch = function(...args) {
     let url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
-    if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/)) {
+    if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/) && firstSyncDone) {
       setTimeout(() => {
         // Espera a que el carrito se actualice en Shopify antes de sincronizar
         syncCart();
