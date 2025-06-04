@@ -50,9 +50,12 @@ async function getLocalCart() {
   return null;
 }
 
-function setLocalCart(cart) {
+function setLocalCart(cart, callback = null) {
   if (cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
+    if (callback) {
+      callback();
+    }
   }
 }
 async function fetchBackendCart() {
@@ -148,7 +151,10 @@ const cartLoadedPopup = () => {
   `;
   closeBtn.onmouseenter = () => closeBtn.style.color = '#222';
   closeBtn.onmouseleave = () => closeBtn.style.color = '#888';
-  closeBtn.onclick = () => backdrop.remove();
+  closeBtn.onclick = () => {
+    backdrop.remove();
+    popup.remove();
+  };
 
   popup.appendChild(closeBtn);
 
@@ -204,7 +210,9 @@ async function syncCart() {
     if (backendCart && backendCart.items && backendCart.items.length > 0 && (!localCart || !cartsAreEqual(localCart, backendCart))) {
       console.log("Replacing Shopify cart with backend cart");
       await replaceShopifyCartWith(backendCart);
-      setLocalCart(backendCart);
+      setLocalCart(backendCart, () => {
+        cartLoadedPopup();
+      });
       firstSyncDone = true;
       return;
     }
@@ -233,13 +241,13 @@ async function syncCart() {
       console.log(
         "Synced cart,  Si el local cambió, sube al backend SOLO si tiene items"
       );
-      if (syncedCart) setLocalCart(syncedCart);
+      if (syncedCart) setLocalCart(syncedCart, null);
       return;
     }
 
     if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
       console.log("Updating local cart with backend cart");
-      setLocalCart(backendCart);
+      setLocalCart(backendCart, null);
       return;
     }
   }
@@ -329,7 +337,6 @@ async function replaceShopifyCartWith(cart) {
       credentials: 'include',
       body: JSON.stringify({ items }),
     });
-    cartLoadedPopup();
   }
 
   await waitForShopifyCartToMatch(cart);
