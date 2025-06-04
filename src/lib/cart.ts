@@ -43,13 +43,6 @@ export class CartService {
       shopifyItemsMap.set(String(item.variant_id), item);
     }
 
-    // 3. Remove items from DB cart that are not in Shopify cart
-    for (const dbItem of dbItems) {
-      if (!shopifyItemsMap.has(dbItem.shopifyVariantId)) {
-        await prisma.cartItem.delete({ where: { id: dbItem.id } });
-      }
-    }
-
     // 4. Add or update items from Shopify cart
     for (const item of shopifyCart.items || []) {
       const variantId = String(item.variant_id);
