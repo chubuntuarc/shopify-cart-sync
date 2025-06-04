@@ -359,45 +359,27 @@ export class CartService {
     return 'https://via.placeholder.com/150x150/cccccc/ffffff?text=No+Image';
   }
 
-  static async getOrCreateCartByUserId(userId: string) {
+  static async getOrCreateCartByUserId(cartData: any, userId: string) {
     const session = await prisma.session.findFirst({ where: { userId } });
     if (!session) throw new Error('No session found for user');
 
-    let cart = await prisma.cart.findFirst({ where: { userId } });
+    let cart = await prisma.cart.findFirst({ where: { sessionId: userId } });
+
     if (!cart) {
       cart = await prisma.cart.create({
         data: {
-          userId,
-          sessionId: session.id,
+          sessionId: userId,
           totalPrice: 0,
           currency: 'USD',
+          ...cartData,
         },
+      });
+    } else {
+      cart = await prisma.cart.update({
+        where: { id: cart.id },
+        data: cartData,
       });
     }
     return cart;
-  }
-
-  static async updateCartForUser(sessionId: string, userId: string) {
-    const session = await prisma.session.findFirst({ where: { userId } });
-    if (!session) throw new Error('No session found for user');
-
-    let cart = await prisma.cart.findFirst({ where: { sessionId } });
-    if (!cart) {
-      cart = await prisma.cart.create({
-        data: {
-          sessionId,
-          userId,
-          totalPrice: 0,
-          currency: 'USD',
-        },
-      });
-    }
-
-    await prisma.cart.updateMany({
-      where: { sessionId: session.id, userId: null },
-      data: { userId }
-    });
-
-    return this.formatCart(cart);
   }
 }

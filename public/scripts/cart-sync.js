@@ -1,7 +1,6 @@
-console.log('cart-sync.js loaded');
-
 (function() {
   const appURL = "https://arco-henna.vercel.app";
+  let customerId = null;
 // Sync cart with Shopify
 
 // 1. Obtener el customerId desde window.CUSTOMER_ID (inyectado por Liquid)
@@ -21,8 +20,7 @@ function setUserIdCookie(customerId) {
 
 // 3. Lógica para mantener la cookie actualizada
 function syncUserIdCookie() {
-  const customerId = getCustomerId();
-  console.log('customerId', customerId);
+  customerId = getCustomerId();
   setUserIdCookie(customerId);
 }
 
@@ -89,7 +87,7 @@ async function syncLocalCartToBackend(cart) {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...cart, userId: getUserIdFromCookie() }),
+      body: JSON.stringify({ ...cart, userId: customerId }),
     });
     if (response.ok) {
       const data = await response.json();
@@ -195,7 +193,7 @@ function updateSessionWithUserId(customerId) {
 }
 
 // Llama a esta función cuando detectes o cambie el CUSTOMER_ID
-const customerId = getCustomerId();
+customerId = getCustomerId();
 if (customerId) {
   updateSessionWithUserId(customerId);
 }

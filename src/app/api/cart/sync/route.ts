@@ -3,15 +3,17 @@ import { getOrCreateSession } from '@/lib/auth';
 import { CartService } from '@/lib/cart';
 
 export async function POST(request: NextRequest) {
-  const { userId } = await request.json();
+  const { cartData, userId } = await request.json();
   try {
     const sessionData = await getOrCreateSession(request);
     // const userId = sessionData.userId;
 
     // Ahora puedes usar userId para buscar el carrito correcto
-    const cart = userId
-      ? await CartService.getOrCreateCartByUserId(userId)
-      : await CartService.getOrCreateCart(sessionData.sessionId);
+    const cart = await CartService.getOrCreateCartByUserId({
+      userId,
+      shopifyCartId: cartData.token,
+      checkoutUrl: "/checkouts/cn/" + cartData.token,
+    }, userId);
     
     // Force sync with Shopify
     await CartService.syncWithShopify(cart.id);
