@@ -6,9 +6,9 @@ export async function PUT(
   request: NextRequest,
   { params }: { params: { itemId: string } }
 ) {
+  const { body, userId } = await request.json();
   try {
-    const sessionData = await getOrCreateSession(request);
-    const body = await request.json();
+    const sessionData = await getOrCreateSession(userId);
     const { quantity } = body;
 
     if (quantity === undefined || quantity < 0) {
@@ -42,7 +42,8 @@ export async function DELETE(
   { params }: { params: { itemId: string } }
 ) {
   try {
-    const sessionData = await getOrCreateSession(request);
+    const { userId } = await request.json();
+    const sessionData = await getOrCreateSession(userId);
     const cart = await CartService.removeFromCart(
       sessionData.sessionId,
       params.itemId

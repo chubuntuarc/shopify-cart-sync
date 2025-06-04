@@ -80,7 +80,8 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    const sessionData = await getOrCreateSession(request);
+    const { userId } = await request.json();
+    const sessionData = await getOrCreateSession(userId);
     const cart = await CartService.clearCart(sessionData.sessionId);
     
     return NextResponse.json({

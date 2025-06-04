@@ -4,7 +4,8 @@ import { CartService } from '@/lib/cart';
 
 export async function GET(request: NextRequest) {
   try {
-    const sessionData = await getOrCreateSession(request);
+    const { userId } = await request.json();
+    const sessionData = await getOrCreateSession(userId);
     
     // Register device
     await registerDevice(sessionData.sessionId, request);
@@ -36,10 +37,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId } = body;
+    const { userId } = await request.json();
     
-    const sessionData = await getOrCreateSession(request);
+    const sessionData = await getOrCreateSession(userId);
     
     // Register device
     await registerDevice(sessionData.sessionId, request);
