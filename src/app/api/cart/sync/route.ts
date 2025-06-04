@@ -23,7 +23,7 @@ export async function OPTIONS(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const { cartData, userId } = await request.json();
   try {
-    const sessionData = await getOrCreateSession(request);
+    const sessionData = await getOrCreateSession(userId);
     // const userId = sessionData.userId;
 
     // Ahora puedes usar userId para buscar el carrito correcto

@@ -61,28 +61,17 @@ export async function getSessionFromToken(sessionToken: string) {
   }
 }
 
-export async function getOrCreateSession(request: NextRequest): Promise<SessionData> {
-  let userId: string | undefined;
-
-  // 1. Intenta obtener el userId de la cookie
-  userId = request.cookies.get('user_id')?.value;
-
-  // 2. Intenta obtener el userId del body (solo si es POST)
-  if (!userId && request.method === 'POST') {
-    try {
-      const body = await request.json();
-      if (body.userId) userId = body.userId;
-    } catch (e) {
-      // Ignora si no es JSON o no tiene userId
+export async function getOrCreateSession(userId?: string, request?: NextRequest): Promise<SessionData> {
+  // 1. Intenta obtener el userId de la cookie si no se pasó como argumento
+  if (!userId && request) {
+    userId = request.cookies.get('user_id')?.value;
+    // 2. Intenta obtener el userId de un header (opcional)
+    if (!userId) {
+      userId = request.headers.get('x-user-id') || undefined;
     }
   }
 
-  // 3. Intenta obtener el userId de un header (opcional)
-  if (!userId) {
-    userId = request.headers.get('x-user-id') || undefined;
-  }
-
-  // 4. Busca la sesión por userId
+  // 3. Busca la sesión por userId
   if (userId) {
     const existingSession = await prisma.session.findFirst({ where: { id: userId } });
     if (existingSession) {
@@ -95,9 +84,9 @@ export async function getOrCreateSession(request: NextRequest): Promise<SessionD
     }
   }
 
-  // 5. Si no existe, crea una nueva sesión (con userId si está disponible)
+  // 4. Si no existe, crea una nueva sesión (con userId si está disponible)
   return await createSession(userId);
-} 
+}
 
 export function setSessionCookie(response: NextResponse, sessionData: SessionData) {
   response.cookies.set(SESSION_COOKIE_NAME, sessionData.sessionToken, {

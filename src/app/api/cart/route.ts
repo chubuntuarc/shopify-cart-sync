@@ -45,10 +45,12 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const body = await request.json();
+  const { cartData, userId } = body;
+
   try {
-    const sessionData = await getOrCreateSession(request);
-    const body = await request.json();
-    const { variantId, quantity, properties } = body;
+    const sessionData = await getOrCreateSession(userId);
+    const { variantId, quantity, properties } = cartData;
 
     if (!variantId || !quantity) {
       return NextResponse.json(
