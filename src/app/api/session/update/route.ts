@@ -29,23 +29,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Missing userId' }, { status: 400, headers: corsHeaders });
     }
 
-    const sessionData = await getOrCreateSession(request);
-
-    await prisma.session.update({
+    await prisma.session.upsert({
       where: { id: String(userId) },
-      data: { userId: String(userId) },
+      update: { userId: String(userId) },
+      create: {
+        id: String(userId),
+        userId: String(userId),
+        sessionToken: '',
+        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+      },
     });
-    
-    if (!sessionData) {
-      await prisma.session.create({
-        data: {
-          id: String(userId),
-          userId: String(userId),
-          sessionToken: '',
-          expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        },
-      });
-    }
 
     return NextResponse.json({ success: true }, { headers: corsHeaders });
   } catch (error) {
