@@ -146,8 +146,13 @@ async function syncCart() {
     return;
   }
 
-  // Si el local cambió, sube al backend
-  if (localCart && (!backendCart || !cartsAreEqual(localCart, backendCart))) {
+  // Si el local cambió, sube al backend SOLO si tiene items
+  if (
+    localCart &&
+    localCart.items &&
+    localCart.items.length > 0 &&
+    (!backendCart || !cartsAreEqual(localCart, backendCart))
+  ) {
     const syncedCart = await syncLocalCartToBackend(localCart);
     if (syncedCart) setLocalCart(syncedCart);
     return;
@@ -195,9 +200,13 @@ async function observeCartChanges() {
 
   setInterval(async () => {
     const currentCart = await getLocalCart();
-    if (!cartsAreEqual(currentCart, lastCart)) {
+    if (
+      currentCart &&
+      currentCart.items &&
+      currentCart.items.length > 0 &&
+      !cartsAreEqual(currentCart, lastCart)
+    ) {
       lastCart = currentCart;
-      // Solo sincroniza si el usuario tiene sesión
       if (isUserLoggedIn()) {
         await syncLocalCartToBackend(currentCart);
       }
