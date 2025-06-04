@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const sessionData = await getOrCreateSession(request);
 
     await prisma.session.update({
-      where: { id: sessionData.sessionId },
+      where: { id: String(userId) },
       data: { userId: String(userId) },
     });
     
