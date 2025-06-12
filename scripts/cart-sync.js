@@ -5,15 +5,21 @@
   let customerId = null;
   let firstSyncDone = false;
 
+  console.log('🔄 Cart Sync Script Initialized');
+
 function getCustomerId() {
-  return typeof window !== 'undefined' && window.CUSTOMER_ID ? String(window.CUSTOMER_ID) : null;
+  const id = typeof window !== 'undefined' && window.CUSTOMER_ID ? String(window.CUSTOMER_ID) : null;
+  console.log('👤 Customer ID:', id);
+  return id;
 }
 
 function setUserIdCookie(customerId) {
   if (customerId) {
     document.cookie = `user_id=${customerId}; path=/; SameSite=Lax`;
+    console.log('🍪 User ID cookie set:', customerId);
   } else {
     document.cookie = 'user_id=; Max-Age=0; path=/; SameSite=Lax';
+    console.log('🍪 User ID cookie cleared');
   }
 }
 
@@ -26,15 +32,20 @@ syncUserIdCookie();
 
 function getSessionToken() {
   const match = document.cookie.match(/(?:^|;\s*)persistent_cart_session=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : null;
+  const token = match ? decodeURIComponent(match[1]) : null;
+  console.log('🔑 Session Token:', token ? 'Present' : 'Not found');
+  return token;
 }
 
 function isUserLoggedIn() {
-  return !!getSessionToken();
+  const loggedIn = !!getSessionToken();
+  console.log('👤 User logged in:', loggedIn);
+  return loggedIn;
 }
 
 async function getLocalCart() {
   try {
+    console.log('🛒 Fetching local cart...');
     const response = await fetch('/cart.js', {
       method: 'GET',
       credentials: 'include',
@@ -42,10 +53,11 @@ async function getLocalCart() {
     });
     if (response.ok) {
       const cart = await response.json();
+      console.log('🛒 Local cart fetched:', cart);
       return cart;
     }
   } catch (err) {
-    console.error('Error fetching Shopify AJAX cart:', err);
+    console.error('❌ Error fetching Shopify AJAX cart:', err);
   }
   return null;
 }
@@ -53,14 +65,20 @@ async function getLocalCart() {
 function setLocalCart(cart, callback = null) {
   if (cart) {
     localStorage.setItem('cart', JSON.stringify(cart));
+    console.log('💾 Local cart saved to localStorage');
     if (callback) {
       callback();
     }
   }
 }
+
 async function fetchBackendCart() {
-  if (!customerId) return null;
+  if (!customerId) {
+    console.log('⚠️ No customer ID, skipping backend cart fetch');
+    return null;
+  }
   try {
+    console.log('🔄 Fetching backend cart...');
     const response = await fetch(`${appURL}/api/cart?userId=${encodeURIComponent(customerId)}`, {
       method: "GET",
       headers: {
@@ -69,17 +87,22 @@ async function fetchBackendCart() {
     });
     if (response.ok) {
       const data = await response.json();
+      console.log('🔄 Backend cart fetched:', data.cart);
       return data.cart || null;
     }
   } catch (err) {
-    console.error('Error fetching backend cart:', err);
+    console.error('❌ Error fetching backend cart:', err);
   }
   return null;
 }
 
 async function syncLocalCartToBackend(cart) {
-  if (!customerId) return null;
+  if (!customerId) {
+    console.log('⚠️ No customer ID, skipping backend sync');
+    return null;
+  }
   try {
+    console.log('🔄 Syncing local cart to backend...');
     const response = await fetch(appURL + '/api/cart', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -90,16 +113,19 @@ async function syncLocalCartToBackend(cart) {
     });
     if (response.ok) {
       const data = await response.json();
+      console.log('✅ Local cart synced to backend:', data.cart);
       return data.cart || null;
     }
   } catch (err) {
-    console.error('Error syncing local cart to backend:', err);
+    console.error('❌ Error syncing local cart to backend:', err);
   }
   return null;
 }
 
 function cartsAreEqual(cartA, cartB) {
-  return JSON.stringify(cartA) === JSON.stringify(cartB);
+  const equal = JSON.stringify(cartA) === JSON.stringify(cartB);
+  console.log('🔄 Carts equal:', equal);
+  return equal;
 }
 
 const cartLoadedPopup = () => {
@@ -199,20 +225,28 @@ const cartLoadedPopup = () => {
 };
 
 async function syncCart() {
+  console.log('🔄 Starting cart sync...');
   customerId = getCustomerId();
-  if (!customerId) return;
+  if (!customerId) {
+    console.log('⚠️ No customer ID, skipping sync');
+    return;
+  }
 
   const localCart = await getLocalCart();
   const backendCart = await fetchBackendCart();
+  
   if (!firstSyncDone) {
+    console.log('🔄 First sync attempt...');
     if (backendCart && backendCart.items && backendCart.items.length > 0 && (!localCart || !cartsAreEqual(localCart, backendCart))) {
+      console.log('🔄 Replacing local cart with backend cart...');
       await replaceShopifyCartWith(backendCart);
       setLocalCart(backendCart);
       firstSyncDone = true;
-      console.log("Cart Loaded ⚡️");
+      console.log("✅ Cart Loaded ⚡️");
       return;
     }
     if (!backendCart && localCart && localCart.items && localCart.items.length > 0) {
+      console.log('🔄 Syncing local cart to backend...');
       await syncLocalCartToBackend(localCart);
       firstSyncDone = true;
       return;
@@ -221,6 +255,7 @@ async function syncCart() {
     return;
   } else {
     if (localCart && backendCart && cartsAreEqual(localCart, backendCart)) {
+      console.log('🔄 Carts are in sync, no action needed');
       return;
     }
 
@@ -230,13 +265,15 @@ async function syncCart() {
       localCart.items.length > 0 &&
       (!backendCart || !cartsAreEqual(localCart, backendCart))
     ) {
+      console.log('🔄 Syncing local cart to backend...');
       const syncedCart = await syncLocalCartToBackend(localCart);
-      console.log("Cart saved ⚡️");
+      console.log("✅ Cart saved ⚡️");
       if (syncedCart) setLocalCart(syncedCart, null);
       return;
     }
 
     if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
+      console.log('🔄 Updating local cart with backend data...');
       setLocalCart(backendCart, null);
       return;
     }
@@ -244,11 +281,15 @@ async function syncCart() {
 }
 
 function interceptCartRequests() {
+  console.log('🔄 Setting up cart request interception...');
+  
   const originalFetch = window.fetch;
   window.fetch = function(...args) {
     let url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
     if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/) && firstSyncDone) {
+      console.log('🛒 Cart modification detected:', url);
       setTimeout(() => {
+        console.log('🔄 Triggering sync after cart modification...');
         syncCart();
       }, 500);
     }
@@ -259,17 +300,23 @@ function interceptCartRequests() {
   window.XMLHttpRequest.prototype.open = function(method, url, ...rest) {
     this.addEventListener('load', function() {
       if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/) && firstSyncDone) {
+        console.log('🛒 Cart modification detected (XHR):', url);
         setTimeout(() => {
+          console.log('🔄 Triggering sync after cart modification...');
           syncCart();
         }, 500);
       }
     });
     return originalOpen.call(this, method, url, ...rest);
   };
+  
+  console.log('✅ Cart request interception setup complete');
 }
 
 async function observeCartChanges() {
+  console.log('🔄 Starting cart observation...');
   let lastCart = await getLocalCart();
+  console.log('📝 Initial cart state:', lastCart);
 
   setInterval(async () => {
     const currentCart = await getLocalCart();
@@ -279,26 +326,42 @@ async function observeCartChanges() {
       currentCart.items.length > 0 &&
       !cartsAreEqual(currentCart, lastCart)
     ) {
+      console.log('🔄 Cart change detected in observation interval');
+      console.log('📝 Previous cart:', lastCart);
+      console.log('📝 Current cart:', currentCart);
+      
       lastCart = currentCart;
       if (isUserLoggedIn()) {
+        console.log('🔄 Syncing observed cart changes to backend...');
         await syncLocalCartToBackend(currentCart);
+      } else {
+        console.log('⚠️ User not logged in, skipping backend sync');
       }
     }
   }, 2000);
+  
+  console.log('✅ Cart observation started');
 }
 
 function updateSessionWithUserId(customerId) {
-  if (!customerId) return;
+  if (!customerId) {
+    console.log('⚠️ No customer ID provided for session update');
+    return;
+  }
+  
+  console.log('🔄 Updating session with user ID:', customerId);
   fetch(appURL + '/api/session/update', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId: customerId }),
   }).then(res => {
     if (res.ok) {
-      // console.log('Session updated with userId:', customerId);
+      console.log('✅ Session updated successfully');
+    } else {
+      console.error('❌ Failed to update session:', res.status);
     }
   }).catch(err => {
-    console.error('Error updating session with userId:', err);
+    console.error('❌ Error updating session:', err);
   });
 }
 
@@ -307,40 +370,48 @@ if (customerId) {
   updateSessionWithUserId(customerId);
 }
 
-console.log("🏹 Arco - Cart Sync");
+console.log("🏹 Arco - Cart Sync Initialized");
 interceptCartRequests();
 syncCart();
 observeCartChanges();
 
 async function replaceShopifyCartWith(cart) {
+  console.log('🔄 Replacing Shopify cart...');
   await fetch('/cart/clear.js', { method: 'POST', credentials: 'include' });
+  console.log('✅ Cart cleared');
 
   if (cart && cart.items && cart.items.length > 0) {
+    console.log('🛒 Adding items to cart:', cart.items);
     const items = cart.items.map(item => ({
       id: item.shopifyVariantId || item.variantId || item.variant_id,
       quantity: item.quantity,
       properties: item.properties || undefined,
     }));
+    
     await fetch('/cart/add.js', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify({ items }),
     });
+    console.log('✅ Items added to cart');
   }
 
   await waitForShopifyCartToMatch(cart);
 }
 
 async function waitForShopifyCartToMatch(targetCart, maxTries = 10, delay = 300) {
+  console.log('⏳ Waiting for Shopify cart to match...');
   for (let i = 0; i < maxTries; i++) {
     const currentCart = await getLocalCart();
     if (cartsAreEqual(currentCart, targetCart)) {
+      console.log('✅ Cart matched successfully');
       return;
     }
+    console.log(`⏳ Attempt ${i + 1}/${maxTries}: Cart not matched yet`);
     await new Promise(res => setTimeout(res, delay));
   }
-  console.warn('Shopify cart did not match backend cart after waiting.');
+  console.warn('⚠️ Shopify cart did not match backend cart after waiting');
 }
 
 })();
