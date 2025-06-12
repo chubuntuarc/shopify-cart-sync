@@ -141,10 +141,15 @@
   }
 
   // --- INIT ---
-  document.addEventListener('DOMContentLoaded', () => {
+  const onLoad = () => {
     console.log('[CartSync] Script loaded.');
     initialSync();
     interceptCartRequests();
-  });
+  }
 
+  if (document.readyState === "complete") {
+    onLoad();
+  } else {
+    window.addEventListener("load", onLoad);
+  }
 })();
