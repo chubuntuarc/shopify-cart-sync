@@ -5,7 +5,9 @@
   let customerId = null;
 
   function getCustomerId() {
-    return typeof window !== 'undefined' && window.CUSTOMER_ID ? String(window.CUSTOMER_ID) : null;
+    const id = typeof window !== 'undefined' && window.CUSTOMER_ID ? String(window.CUSTOMER_ID) : null;
+    console.log('[CartSync] Customer ID:', id);
+    return id;
   }
 
   async function getLocalCart() {
@@ -16,10 +18,12 @@
         headers: { 'Accept': 'application/json' }
       });
       if (response.ok) {
-        return await response.json();
+        const cart = await response.json();
+        console.log('[CartSync] Local cart fetched:', cart);
+        return cart;
       }
     } catch (err) {
-      console.error('Error fetching Shopify AJAX cart:', err);
+      console.error('[CartSync] Error fetching Shopify AJAX cart:', err);
     }
     return null;
   }
@@ -33,10 +37,11 @@
       });
       if (response.ok) {
         const data = await response.json();
+        console.log('[CartSync] Backend cart fetched:', data.cart);
         return data.cart || null;
       }
     } catch (err) {
-      console.error('Error fetching backend cart:', err);
+      console.error('[CartSync] Error fetching backend cart:', err);
     }
     return null;
   }
@@ -52,13 +57,16 @@
           cartData: cart || {}
         }),
       });
+      console.log('[CartSync] Local cart synced to backend.');
     } catch (err) {
-      console.error('Error syncing local cart to backend:', err);
+      console.error('[CartSync] Error syncing local cart to backend:', err);
     }
   }
 
   function cartsAreEqual(cartA, cartB) {
-    return JSON.stringify(cartA) === JSON.stringify(cartB);
+    const equal = JSON.stringify(cartA) === JSON.stringify(cartB);
+    console.log('[CartSync] Carts equal:', equal);
+    return equal;
   }
 
   async function replaceShopifyCartWith(cart) {
@@ -77,21 +85,29 @@
           body: JSON.stringify({ items }),
         });
       }
+      console.log('[CartSync] Local cart replaced with backend cart. Reloading...');
       window.location.reload();
     } catch (error) {
-      console.error('Error replacing cart:', error);
+      console.error('[CartSync] Error replacing cart:', error);
     }
   }
 
   async function initialSync() {
+    console.log('[CartSync] Initial sync started.');
     customerId = getCustomerId();
-    if (!customerId) return;
+    if (!customerId) {
+      console.log('[CartSync] No customer ID, skipping sync.');
+      return;
+    }
     const [localCart, backendCart] = await Promise.all([
       getLocalCart(),
       fetchBackendCart()
     ]);
     if (backendCart && !cartsAreEqual(localCart, backendCart)) {
+      console.log('[CartSync] Backend cart is different. Replacing local cart...');
       await replaceShopifyCartWith(backendCart);
+    } else {
+      console.log('[CartSync] No cart replacement needed.');
     }
   }
 
@@ -104,6 +120,7 @@
           const cart = await getLocalCart();
           await syncLocalCartToBackend(cart);
         }, 100);
+        console.log('[CartSync] Cart update event detected, syncing to backend...');
       }
       return originalFetch.apply(this, args);
     };
@@ -116,6 +133,7 @@
             const cart = await getLocalCart();
             await syncLocalCartToBackend(cart);
           }, 100);
+          console.log('[CartSync] Cart update event detected (XHR), syncing to backend...');
         }
       });
       return originalOpen.call(this, method, url, ...rest);
@@ -124,6 +142,7 @@
 
   // --- INIT ---
   document.addEventListener('DOMContentLoaded', () => {
+    console.log('[CartSync] Script loaded.');
     initialSync();
     interceptCartRequests();
   });
