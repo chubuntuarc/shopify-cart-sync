@@ -11,9 +11,7 @@
   console.log('🔄 Cart Sync Script Initialized');
 
 function getCustomerId() {
-  const id = typeof window !== 'undefined' && window.CUSTOMER_ID ? String(window.CUSTOMER_ID) : null;
-  console.log('👤 Customer ID:', id);
-  return id;
+  return typeof window !== 'undefined' && window.CUSTOMER_ID ? String(window.CUSTOMER_ID) : null;
 }
 
 function setUserIdCookie(customerId) {
