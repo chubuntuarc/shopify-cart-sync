@@ -71,6 +71,7 @@
 
   async function replaceShopifyCartWith(cart) {
     try {
+      localStorage.setItem('cart_sync_reloaded', '1');
       await fetch('/cart/clear.js', { method: 'POST', credentials: 'include' });
       if (cart && cart.items && cart.items.length > 0) {
         const items = cart.items.map(item => ({
@@ -94,6 +95,11 @@
 
   async function initialSync() {
     console.log('[CartSync] Initial sync started.');
+    if (localStorage.getItem('cart_sync_reloaded')) {
+      localStorage.removeItem('cart_sync_reloaded');
+      console.log('[CartSync] Reload marker found, skipping sync to avoid reload loop.');
+      return;
+    }
     customerId = getCustomerId();
     if (!customerId) {
       console.log('[CartSync] No customer ID, skipping sync.');
