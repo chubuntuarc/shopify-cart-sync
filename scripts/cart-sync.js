@@ -135,8 +135,8 @@
       console.log('[CartSync] Both carts have items and are equal. Nothing to do.');
       return;
     } else {
-      console.log('[CartSync] Both carts have items but are different. Syncing local to backend...');
-      await syncLocalCartToBackend(localCart);
+      console.log('[CartSync] Both carts have items but are different. Replacing local cart with backend...');
+      await replaceShopifyCartWith(backendCart);
       return;
     }
   }
