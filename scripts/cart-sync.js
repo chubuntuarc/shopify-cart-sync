@@ -109,11 +109,35 @@
       getLocalCart(),
       fetchBackendCart()
     ]);
-    if (backendCart && !cartsAreEqual(localCart, backendCart)) {
-      console.log('[CartSync] Backend cart is different. Replacing local cart...');
+
+    const localHasItems = localCart && localCart.items && localCart.items.length > 0;
+    const backendHasItems = backendCart && backendCart.items && backendCart.items.length > 0;
+
+    if (!localHasItems && !backendHasItems) {
+      console.log('[CartSync] Both carts empty, nothing to do.');
+      return;
+    }
+
+    if (localHasItems && !backendHasItems) {
+      console.log('[CartSync] Local has items, backend empty. Syncing local to backend...');
+      await syncLocalCartToBackend(localCart);
+      return;
+    }
+
+    if (!localHasItems && backendHasItems) {
+      console.log('[CartSync] Local empty, backend has items. Replacing local cart...');
       await replaceShopifyCartWith(backendCart);
+      return;
+    }
+
+    // Ambos tienen items
+    if (cartsAreEqual(localCart, backendCart)) {
+      console.log('[CartSync] Both carts have items and are equal. Nothing to do.');
+      return;
     } else {
-      console.log('[CartSync] No cart replacement needed.');
+      console.log('[CartSync] Both carts have items but are different. Syncing local to backend...');
+      await syncLocalCartToBackend(localCart);
+      return;
     }
   }
 
