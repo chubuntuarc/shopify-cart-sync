@@ -4,6 +4,9 @@
   const appURL = "https://arco-henna.vercel.app";
   let customerId = null;
   let firstSyncDone = false;
+  let lastSyncTime = 0;
+  const SYNC_COOLDOWN = 1000; // 1 segundo de cooldown entre sincronizaciones
+  let syncInProgress = false;
 
   console.log('🔄 Cart Sync Script Initialized');
 
@@ -225,58 +228,86 @@ const cartLoadedPopup = () => {
 };
 
 async function syncCart() {
-  console.log('🔄 Starting cart sync...');
-  customerId = getCustomerId();
-  if (!customerId) {
-    console.log('⚠️ No customer ID, skipping sync');
+  const now = Date.now();
+  if (syncInProgress || (now - lastSyncTime < SYNC_COOLDOWN)) {
+    console.log('⏳ Sync skipped - too soon or in progress');
     return;
   }
 
-  const localCart = await getLocalCart();
-  const backendCart = await fetchBackendCart();
-  
-  if (!firstSyncDone) {
-    console.log('🔄 First sync attempt...');
-    if (backendCart && backendCart.items && backendCart.items.length > 0 && (!localCart || !cartsAreEqual(localCart, backendCart))) {
-      console.log('🔄 Replacing local cart with backend cart...');
-      await replaceShopifyCartWith(backendCart);
-      setLocalCart(backendCart);
-      firstSyncDone = true;
-      console.log("✅ Cart Loaded ⚡️");
+  console.log('🔄 Starting cart sync...');
+  syncInProgress = true;
+  lastSyncTime = now;
+
+  try {
+    customerId = getCustomerId();
+    if (!customerId) {
+      console.log('⚠️ No customer ID, skipping sync');
       return;
     }
-    if (!backendCart && localCart && localCart.items && localCart.items.length > 0) {
+
+    // Obtener ambos carritos en paralelo para mayor velocidad
+    const [localCart, backendCart] = await Promise.all([
+      getLocalCart(),
+      fetchBackendCart()
+    ]);
+
+    console.log('📊 Sync State:', {
+      hasLocalCart: !!localCart,
+      hasBackendCart: !!backendCart,
+      firstSyncDone
+    });
+
+    if (!firstSyncDone) {
+      console.log('🔄 First sync attempt...');
+      if (backendCart?.items?.length > 0 && (!localCart || !cartsAreEqual(localCart, backendCart))) {
+        console.log('🔄 Replacing local cart with backend cart...');
+        await replaceShopifyCartWith(backendCart);
+        setLocalCart(backendCart);
+        firstSyncDone = true;
+        console.log("✅ Cart Loaded ⚡️");
+        return;
+      }
+      if (!backendCart && localCart?.items?.length > 0) {
+        console.log('🔄 Syncing local cart to backend...');
+        await syncLocalCartToBackend(localCart);
+        firstSyncDone = true;
+        return;
+      }
+      firstSyncDone = true;
+      return;
+    }
+
+    // Lógica de sincronización mejorada
+    if (localCart && backendCart) {
+      if (cartsAreEqual(localCart, backendCart)) {
+        console.log('🔄 Carts are in sync, no action needed');
+        return;
+      }
+
+      // Determinar cuál carrito es más reciente
+      const localCartTime = localCart.updated_at || 0;
+      const backendCartTime = backendCart.updated_at || 0;
+
+      if (localCartTime > backendCartTime) {
+        console.log('🔄 Local cart is newer, syncing to backend...');
+        await syncLocalCartToBackend(localCart);
+      } else {
+        console.log('🔄 Backend cart is newer, updating local...');
+        await replaceShopifyCartWith(backendCart);
+        setLocalCart(backendCart);
+      }
+    } else if (localCart?.items?.length > 0) {
       console.log('🔄 Syncing local cart to backend...');
       await syncLocalCartToBackend(localCart);
-      firstSyncDone = true;
-      return;
-    }
-    firstSyncDone = true;
-    return;
-  } else {
-    if (localCart && backendCart && cartsAreEqual(localCart, backendCart)) {
-      console.log('🔄 Carts are in sync, no action needed');
-      return;
-    }
-
-    if (
-      localCart &&
-      localCart.items &&
-      localCart.items.length > 0 &&
-      (!backendCart || !cartsAreEqual(localCart, backendCart))
-    ) {
-      console.log('🔄 Syncing local cart to backend...');
-      const syncedCart = await syncLocalCartToBackend(localCart);
-      console.log("✅ Cart saved ⚡️");
-      if (syncedCart) setLocalCart(syncedCart, null);
-      return;
-    }
-
-    if (backendCart && (!localCart || !cartsAreEqual(localCart, backendCart))) {
+    } else if (backendCart?.items?.length > 0) {
       console.log('🔄 Updating local cart with backend data...');
-      setLocalCart(backendCart, null);
-      return;
+      await replaceShopifyCartWith(backendCart);
+      setLocalCart(backendCart);
     }
+  } catch (error) {
+    console.error('❌ Error during sync:', error);
+  } finally {
+    syncInProgress = false;
   }
 }
 
@@ -288,10 +319,11 @@ function interceptCartRequests() {
     let url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
     if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/) && firstSyncDone) {
       console.log('🛒 Cart modification detected:', url);
+      // Reducir el delay para una sincronización más rápida
       setTimeout(() => {
         console.log('🔄 Triggering sync after cart modification...');
         syncCart();
-      }, 500);
+      }, 100); // Reducido de 500ms a 100ms
     }
     return originalFetch.apply(this, args);
   };
@@ -304,7 +336,7 @@ function interceptCartRequests() {
         setTimeout(() => {
           console.log('🔄 Triggering sync after cart modification...');
           syncCart();
-        }, 500);
+        }, 100); // Reducido de 500ms a 100ms
       }
     });
     return originalOpen.call(this, method, url, ...rest);
@@ -318,7 +350,13 @@ async function observeCartChanges() {
   let lastCart = await getLocalCart();
   console.log('📝 Initial cart state:', lastCart);
 
+  // Reducir el intervalo de observación
   setInterval(async () => {
+    if (syncInProgress) {
+      console.log('⏳ Skip observation - sync in progress');
+      return;
+    }
+
     const currentCart = await getLocalCart();
     if (
       currentCart &&
@@ -338,7 +376,7 @@ async function observeCartChanges() {
         console.log('⚠️ User not logged in, skipping backend sync');
       }
     }
-  }, 2000);
+  }, 1000); // Reducido de 2000ms a 1000ms
   
   console.log('✅ Cart observation started');
 }
