@@ -415,27 +415,44 @@ observeCartChanges();
 
 async function replaceShopifyCartWith(cart) {
   console.log('🔄 Replacing Shopify cart...');
-  await fetch('/cart/clear.js', { method: 'POST', credentials: 'include' });
-  console.log('✅ Cart cleared');
+  
+  // Si estamos en la página del carrito, recargar después de actualizar
+  const isCartPage = window.location.pathname === '/cart';
+  
+  try {
+    await fetch('/cart/clear.js', { method: 'POST', credentials: 'include' });
+    console.log('✅ Cart cleared');
 
-  if (cart && cart.items && cart.items.length > 0) {
-    console.log('🛒 Adding items to cart:', cart.items);
-    const items = cart.items.map(item => ({
-      id: item.shopifyVariantId || item.variantId || item.variant_id,
-      quantity: item.quantity,
-      properties: item.properties || undefined,
-    }));
+    if (cart && cart.items && cart.items.length > 0) {
+      console.log('🛒 Adding items to cart:', cart.items);
+      const items = cart.items.map(item => ({
+        id: item.shopifyVariantId || item.variantId || item.variant_id,
+        quantity: item.quantity,
+        properties: item.properties || undefined,
+      }));
+      
+      await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ items }),
+      });
+      console.log('✅ Items added to cart');
+    }
+
+    await waitForShopifyCartToMatch(cart);
     
-    await fetch('/cart/add.js', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ items }),
-    });
-    console.log('✅ Items added to cart');
+    // Si estamos en la página del carrito, recargar para mostrar los cambios
+    if (isCartPage) {
+      console.log('🔄 Reloading cart page to show updates...');
+      window.location.reload();
+    } else {
+      // Si no estamos en la página del carrito, mostrar un popup
+      cartLoadedPopup();
+    }
+  } catch (error) {
+    console.error('❌ Error replacing cart:', error);
   }
-
-  await waitForShopifyCartToMatch(cart);
 }
 
 async function waitForShopifyCartToMatch(targetCart, maxTries = 10, delay = 300) {
