@@ -6,7 +6,6 @@
 
   function getCustomerId() {
     const id = typeof window !== 'undefined' && window.CUSTOMER_ID ? String(window.CUSTOMER_ID) : null;
-    console.log('[CartSync] Customer ID:', id);
     return id;
   }
 
@@ -19,12 +18,9 @@
       });
       if (response.ok) {
         const cart = await response.json();
-        console.log('[CartSync] Local cart fetched:', cart);
         return cart;
       }
-    } catch (err) {
-      console.error('[CartSync] Error fetching Shopify AJAX cart:', err);
-    }
+    } catch (err) {}
     return null;
   }
 
@@ -37,12 +33,9 @@
       });
       if (response.ok) {
         const data = await response.json();
-        console.log('[CartSync] Backend cart fetched:', data.cart);
         return data.cart || null;
       }
-    } catch (err) {
-      console.error('[CartSync] Error fetching backend cart:', err);
-    }
+    } catch (err) {}
     return null;
   }
 
@@ -57,20 +50,23 @@
           cartData: cart || {}
         }),
       });
-      console.log('[CartSync] Local cart synced to backend.');
-    } catch (err) {
-      console.error('[CartSync] Error syncing local cart to backend:', err);
-    }
+    } catch (err) {}
   }
 
   function cartsAreEqual(cartA, cartB) {
-    const equal = JSON.stringify(cartA) === JSON.stringify(cartB);
-    console.log('[CartSync] Carts equal:', equal);
+    if (!cartA || !cartB) return false;
+    const itemsEqual = (cartA.items?.length || 0) === (cartB.items?.length || 0);
+    // Shopify local cart total_price is in cents, backend may be in units
+    const localPrice = cartA.total_price ? cartA.total_price / 100 : 0;
+    const backendPrice = cartB.totalPrice || 0;
+    const priceEqual = localPrice === backendPrice;
+    const equal = itemsEqual && priceEqual;
     return equal;
   }
 
   async function replaceShopifyCartWith(cart) {
     try {
+      localStorage.setItem('cart_sync_reloaded', '1');
       await fetch('/cart/clear.js', { method: 'POST', credentials: 'include' });
       if (cart && cart.items && cart.items.length > 0) {
         const items = cart.items.map(item => ({
@@ -85,68 +81,59 @@
           body: JSON.stringify({ items }),
         });
       }
-      console.log('[CartSync] Local cart replaced with backend cart. Reloading...');
-    } catch (error) {
-      console.error('[CartSync] Error replacing cart:', error);
-    }
+      window.location.reload();
+    } catch (error) {}
   }
 
   async function initialSync() {
-    console.log('[CartSync] Initial sync started.');
-    // Customer Validation.
-    customerId = getCustomerId();
-    if (!customerId) {
-      console.log("[CartSync] No customer ID, skipping sync.");
+    if (localStorage.getItem('cart_sync_reloaded')) {
+      localStorage.removeItem('cart_sync_reloaded');
       return;
     }
-    // Carts Validation.
+    customerId = getCustomerId();
+    if (!customerId) {
+      return;
+    }
     const [localCart, backendCart] = await Promise.all([
       getLocalCart(),
       fetchBackendCart()
     ]);
-    // Carts Items Validation.
+
     const localHasItems = localCart && localCart.items && localCart.items.length > 0;
     const backendHasItems = backendCart && backendCart.items && backendCart.items.length > 0;
-    // Carts Empty Validation.
+
     if (!localHasItems && !backendHasItems) {
-      console.log('[CartSync] Both carts empty, nothing to do.');
       return;
     }
-    // Local Cart Empty & Backend Cart with Items.
-    if (!localHasItems && backendHasItems) {
-      console.log('[CartSync] Local empty, backend has items. Replacing local cart...');
-      await replaceShopifyCartWith(backendCart);
-      return;
-    }
-    // Local Cart has items and Backend cart is empty.
+
     if (localHasItems && !backendHasItems) {
-      console.log('[CartSync] Local has items, backend empty. Syncing local to backend...');
       await syncLocalCartToBackend(localCart);
       return;
     }
+
+    if (!localHasItems && backendHasItems) {
+      await replaceShopifyCartWith(backendCart);
+      return;
+    }
+
     // Ambos tienen items
     if (cartsAreEqual(localCart, backendCart)) {
-      console.log('[CartSync] Both carts have items and are equal. Nothing to do.');
       return;
     } else {
-      console.log('[CartSync] Both carts have items but are different. Replacing local cart with backend...');
-      console.log("backendCart", backendCart);
       await replaceShopifyCartWith(backendCart);
       return;
     }
   }
-  
+
   function interceptCartRequests() {
     const originalFetch = window.fetch;
     window.fetch = function(...args) {
       let url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
-      if (url && url.match(/\/cart\/(add|update|change)(\.js)?/)) {
-        console.log("URL ...", url);
+      if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/)) {
         setTimeout(async () => {
           const cart = await getLocalCart();
           await syncLocalCartToBackend(cart);
-        }, 100);
-        console.log('[CartSync] Cart update event detected, syncing to backend...');
+        }, 1500);
       }
       return originalFetch.apply(this, args);
     };
@@ -154,12 +141,11 @@
     const originalOpen = window.XMLHttpRequest.prototype.open;
     window.XMLHttpRequest.prototype.open = function(method, url, ...rest) {
       this.addEventListener('load', function() {
-        if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/)) {
+        if (url && url.match(/\/cart\/(add|update|change)(\.js)?/)) {
           setTimeout(async () => {
             const cart = await getLocalCart();
             await syncLocalCartToBackend(cart);
-          }, 100);
-          console.log('[CartSync] Cart update event detected (XHR), syncing to backend...');
+          }, 1500);
         }
       });
       return originalOpen.call(this, method, url, ...rest);
@@ -168,9 +154,8 @@
 
   // --- INIT ---
   const onLoad = () => {
-    console.log('[CartSync] Script loaded.');
     initialSync();
-    interceptCartRequests();
+    setTimeout(interceptCartRequests, 1000);
   }
 
   if (document.readyState === "complete") {
