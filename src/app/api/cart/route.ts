@@ -29,10 +29,15 @@ export async function GET(request: NextRequest) {
       shopifyCartId: null,
       checkoutUrl: null,
     }, userId ?? '');
+    
+    const cartItems = await CartService.getCartItemsByCartId(cart.id);
 
     return NextResponse.json({
       success: true,
-      cart,
+      cart: {
+        ...cart,
+        items: cartItems,
+      },
       userId: userId || null,
     }, getCorsHeaders(request.headers.get('origin')));
   } catch (error) {

@@ -374,9 +374,9 @@ export class CartService {
       cart = await prisma.cart.create({
         data: {
           sessionId: userId,
-          totalPrice: 0,
-          currency: 'USD',
-          shopifyCartId: cartData.token,
+          totalPrice: cartData.totalPrice,
+          currency: cartData.currency,
+          shopifyCartId: cartData.id,
           checkoutUrl: "/checkouts/cn/" + cartData.token,
         },
       });
@@ -388,5 +388,10 @@ export class CartService {
     }
     const cartItems = await prisma.cartItem.findMany({ where: { cartId: cart.id } });
     return this.formatCart({ ...cart, items: cartItems });
+  }
+  
+  static async getCartItemsByCartId(cartId: string) {
+    const cartItems = await prisma.cartItem.findMany({ where: { cartId } });
+    return cartItems;
   }
 }
