@@ -269,26 +269,18 @@ function InstallInstructions() {
           >
             <span>Install Instructions</span>
             <svg
-              className={`w-5 h-5 ml-2 transition-transform ${
-                open ? "transform rotate-180" : ""
-              }`}
+              className={`w-5 h-5 ml-2 transition-transform ${open ? "transform rotate-180" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
           {open && (
             <div id="install-instructions-content" className="mt-5 space-y-4">
               <p className="text-sm text-gray-500">
-                To enable persistent cart sync, add the <b>Arco - Cart Sync</b>{" "}
-                section to your theme using the Shopify theme customizer:
+                To enable persistent cart sync, activate the <b>Arco - Cart Sync</b> app embed in your theme and add the section using the Shopify theme customizer:
               </p>
               <ol className="list-decimal list-inside text-sm text-gray-500 space-y-1">
                 <li>
@@ -298,8 +290,7 @@ function InstallInstructions() {
                   Click <b>Actions → Customize</b> on your current theme.
                 </li>
                 <li>
-                  Go to the <b>Header</b> (or desired location) and click{" "}
-                  <b>Add section</b>.
+                  In the left sidebar, click the <b>App embeds</b> icon (puzzle piece) and activate <b>Arco - Cart Sync</b>.
                 </li>
                 <li>
                   In the <b>Apps</b> tab, choose <b>Arco - Cart Sync</b>.
@@ -310,8 +301,8 @@ function InstallInstructions() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                   <div className="flex justify-center">
                     <img
-                      src="/arco-integration.png"
-                      alt="Shopify theme app extension setup screenshot"
+                      src="/arco_theme.png"
+                      alt="Shopify app embed activation screenshot"
                       className="rounded border border-gray-200 shadow max-w-full h-auto"
                       style={{ maxWidth: "600px" }}
                     />

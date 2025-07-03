@@ -1,9 +1,11 @@
-<script src="{{ 'cart-sync.min.js' | asset_url }}"></script>
+<script>
+  window.CUSTOMER_ID = {{ customer.id }};
+</script>
 
 {% schema %}
 {
   "name": "Arco - Cart Sync",
-  "target": "section",
+  "target": "body",
   "settings": []
 }
 {% endschema %}

@@ -152,10 +152,26 @@
     };
   }
 
+  function startRealtimeCartSync() {
+    setInterval(async () => {
+      if (document.visibilityState !== 'visible') return;
+      customerId = getCustomerId();
+      if (!customerId) return;
+      const [localCart, backendCart] = await Promise.all([
+        getLocalCart(),
+        fetchBackendCart()
+      ]);
+      if (!cartsAreEqual(localCart, backendCart)) {
+        await replaceShopifyCartWith(backendCart);
+      }
+    }, 15000); // cada 15 segundos
+  }
+
   // --- INIT ---
   const onLoad = () => {
     initialSync();
     setTimeout(interceptCartRequests, 1000);
+    startRealtimeCartSync();
   }
 
   if (document.readyState === "complete") {
