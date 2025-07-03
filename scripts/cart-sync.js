@@ -3,6 +3,7 @@
 (function() {
   const appURL = "https://arco-henna.vercel.app";
   let customerId = null;
+  let cartSyncInterval = null; // Variable global dentro del IIFE
 
   function getCustomerId() {
     const id = typeof window !== 'undefined' && window.CUSTOMER_ID ? String(window.CUSTOMER_ID) : null;
@@ -50,6 +51,8 @@
           cartData: cart || {}
         }),
       });
+      console.log('[CartSync] Local cart synced to backend.');
+      startRealtimeCartSync();
     } catch (err) {}
   }
 
@@ -130,6 +133,10 @@
     window.fetch = function(...args) {
       let url = typeof args[0] === 'string' ? args[0] : args[0]?.url;
       if (url && url.match(/\/cart\/(add|update|change|clear)(\.js)?/)) {
+        if (cartSyncInterval) {
+          clearInterval(cartSyncInterval);
+          console.log('[CartSync] Polling interval stopped due to cart request interception.');
+        }
         setTimeout(async () => {
           const cart = await getLocalCart();
           await syncLocalCartToBackend(cart);
@@ -142,6 +149,10 @@
     window.XMLHttpRequest.prototype.open = function(method, url, ...rest) {
       this.addEventListener('load', function() {
         if (url && url.match(/\/cart\/(add|update|change)(\.js)?/)) {
+          if (cartSyncInterval) {
+            clearInterval(cartSyncInterval);
+            console.log('[CartSync] Polling interval stopped due to cart request interception.');
+          }
           setTimeout(async () => {
             const cart = await getLocalCart();
             await syncLocalCartToBackend(cart);
@@ -153,7 +164,7 @@
   }
 
   function startRealtimeCartSync() {
-    setInterval(async () => {
+    cartSyncInterval = setInterval(async () => {
       if (document.visibilityState !== 'visible') return;
       customerId = getCustomerId();
       if (!customerId) return;
@@ -165,10 +176,11 @@
       if (!cartsAreEqual(localCart, backendCart)) {
         console.log('[CartSync] Cart difference detected. Updating local cart from backend.');
         await replaceShopifyCartWith(backendCart);
+        clearInterval(cartSyncInterval);
       } else {
         console.log('[CartSync] Carts are equal. No update needed.');
       }
-    }, 5000); // cada 5 segundos
+    }, 5000);
   }
 
   // --- INIT ---
