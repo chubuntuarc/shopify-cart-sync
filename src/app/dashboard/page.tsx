@@ -269,49 +269,69 @@ function InstallInstructions() {
           >
             <span>Install Instructions</span>
             <svg
-              className={`w-5 h-5 ml-2 transition-transform ${open ? "transform rotate-180" : ""}`}
+              className={`w-5 h-5 ml-2 transition-transform ${
+                open ? "transform rotate-180" : ""
+              }`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
           {open && (
             <div id="install-instructions-content" className="mt-5 space-y-4">
               <p className="text-sm text-gray-500">
-                To enable persistent cart sync, add the following code to
-                your <b>theme.liquid</b> file, inside the <b>&lt;head&gt;</b> section:
+                To enable persistent cart sync, add the <b>Arco - Cart Sync</b>{" "}
+                section to your theme using the Shopify theme customizer:
               </p>
-              <pre className="bg-gray-100 rounded p-3 text-xs overflow-x-auto">
-                {`<!-- Arco - Persistent Cart Sync -->
-<script>window.CUSTOMER_ID = {{ customer.id }}</script>
-<!-- End Arco - Persistent Cart Sync -->`}
-              </pre>
               <ol className="list-decimal list-inside text-sm text-gray-500 space-y-1">
                 <li>
                   Go to <b>Online Store → Themes</b> in your Shopify admin.
                 </li>
                 <li>
-                  Click <b>Actions → Edit code</b> on your current theme.
+                  Click <b>Actions → Customize</b> on your current theme.
                 </li>
                 <li>
-                  Open <b>layout/theme.liquid</b>.
+                  Go to the <b>Header</b> (or desired location) and click{" "}
+                  <b>Add section</b>.
                 </li>
                 <li>
-                  Paste the code above just before the closing <b>&lt;/head&gt;</b> tag.
+                  In the <b>Apps</b> tab, choose <b>Arco - Cart Sync</b>.
                 </li>
-                <li>
-                  Click <b>Save</b>.
-                </li>
+                <li>Save your changes.</li>
               </ol>
-              <div className="mt-6 flex justify-center">
-                <img
-                  src="/setup_screen.png"
-                  alt="Shopify theme.liquid setup screenshot"
-                  className="rounded border border-gray-200 shadow max-w-full h-auto"
-                  style={{ maxWidth: '600px' }}
-                />
+              <div className="mt-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                  <div className="flex justify-center">
+                    <img
+                      src="/arco-integration.png"
+                      alt="Shopify theme app extension setup screenshot"
+                      className="rounded border border-gray-200 shadow max-w-full h-auto"
+                      style={{ maxWidth: "600px" }}
+                    />
+                  </div>
+                  <div className="flex justify-center">
+                    <div className="w-full" style={{ maxWidth: "600px" }}>
+                      <div className="aspect-w-16 aspect-h-9">
+                        <iframe
+                          width="100%"
+                          height="315"
+                          src="https://www.youtube.com/embed/K3D6y618Eyk"
+                          title="YouTube video player"
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        ></iframe>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

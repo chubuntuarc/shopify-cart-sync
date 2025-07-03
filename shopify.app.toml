@@ -1,0 +1,28 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+name = "arco-cart-sync"
+client_id = "ef806c7c10b33c0a7ca0639f1dc612d3"
+application_url = "https://arco-henna.vercel.app"
+embedded = true
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_products,read_products,write_customers,read_customers,write_orders,read_orders,write_script_tags,read_script_tags"
+
+[auth]
+redirect_urls = [
+  "https://arco-henna.vercel.app/api/shopify/auth/callback",
+  "https://arco-henna.vercel.app/api/shopify/auth/shopify/callback",
+  "https://arco-henna.vercel.app/api/auth/callback"
+]
+
+[webhooks]
+api_version = "2023-10"
+
+[pos]
+embedded = false
+
+[build]
+automatically_update_urls_on_dev = true
+dev_store_url = "quickstart-1f2f15e5.myshopify.com"
+include_config_on_deploy = true
