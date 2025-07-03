@@ -157,14 +157,18 @@
       if (document.visibilityState !== 'visible') return;
       customerId = getCustomerId();
       if (!customerId) return;
+      console.log('[CartSync] Polling for cart updates...');
       const [localCart, backendCart] = await Promise.all([
         getLocalCart(),
         fetchBackendCart()
       ]);
       if (!cartsAreEqual(localCart, backendCart)) {
+        console.log('[CartSync] Cart difference detected. Updating local cart from backend.');
         await replaceShopifyCartWith(backendCart);
+      } else {
+        console.log('[CartSync] Carts are equal. No update needed.');
       }
-    }, 15000); // cada 15 segundos
+    }, 5000); // cada 5 segundos
   }
 
   // --- INIT ---

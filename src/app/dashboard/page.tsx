@@ -292,9 +292,6 @@ function InstallInstructions() {
                 <li>
                   In the left sidebar, click the <b>App embeds</b> icon (puzzle piece) and activate <b>Arco - Cart Sync</b>.
                 </li>
-                <li>
-                  In the <b>Apps</b> tab, choose <b>Arco - Cart Sync</b>.
-                </li>
                 <li>Save your changes.</li>
               </ol>
               <div className="mt-8">

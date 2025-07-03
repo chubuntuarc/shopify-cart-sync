@@ -1,6 +1,6 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-name = "arco-cart-sync"
+name = "Arco - Cart Sync"
 client_id = "ef806c7c10b33c0a7ca0639f1dc612d3"
 application_url = "https://arco-henna.vercel.app"
 embedded = true
