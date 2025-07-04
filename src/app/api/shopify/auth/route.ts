@@ -113,16 +113,16 @@ export async function GET(request: NextRequest) {
 
     console.log('Shop saved to database:', savedShop.id);
 
-    try {
-      await registerShopifyScriptTag(
-        shop,
-        tokenData.access_token,
-        `${APP_URL}/scripts/cart-sync.min.js`
-      );
-      console.log('ScriptTag registered');  
-    } catch (err) {
-      console.error('Error registering ScriptTag:', err);
-    }
+    // try {
+    //   await registerShopifyScriptTag(
+    //     shop,
+    //     tokenData.access_token,
+    //     `${APP_URL}/scripts/cart-sync.min.js`
+    //   );
+    //   console.log('ScriptTag registered');  
+    // } catch (err) {
+    //   console.error('Error registering ScriptTag:', err);
+    // }
 
     // Redirect to Shopify admin apps page instead of direct app dashboard
     const shopName = shop.replace('.myshopify.com', '');
