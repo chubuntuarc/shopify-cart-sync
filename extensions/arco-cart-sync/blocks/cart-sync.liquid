@@ -1,12 +1,55 @@
-<script src="{{ 'cart-sync.min.js' | asset_url }}" defer></script>
 <script>
   window.CUSTOMER_ID = {{ customer.id }};
+  
+  // Configuraciones del app block
+  window.CART_SYNC_CONFIG = {
+    enable_sync: {{ block.settings.enable_sync | json }},
+    sync_frequency: {{ block.settings.sync_frequency | json }}
+  };
 </script>
 
 {% schema %}
 {
   "name": "Arco - Cart Sync",
   "target": "body",
-  "settings": []
+  "javascript": "cart-sync.min.js",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Cart Synchronization"
+    },
+    {
+      "type": "paragraph",
+      "content": "This app enables real-time cart synchronization across multiple browser sessions and devices. The cart sync functionality will be active on all pages."
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_sync",
+      "label": "Enable Cart Synchronization",
+      "default": true,
+      "info": "Enable or disable cart synchronization functionality"
+    },
+    {
+      "type": "select",
+      "id": "sync_frequency",
+      "label": "Sync Frequency",
+      "options": [
+        {
+          "value": "fast",
+          "label": "Fast (3 seconds)"
+        },
+        {
+          "value": "normal",
+          "label": "Normal (5 seconds)"
+        },
+        {
+          "value": "slow",
+          "label": "Slow (10 seconds)"
+        }
+      ],
+      "default": "fast",
+      "info": "How frequently to check for cart updates"
+    }
+  ]
 }
 {% endschema %}

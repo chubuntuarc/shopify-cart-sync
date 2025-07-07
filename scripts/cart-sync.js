@@ -3,11 +3,37 @@
 (function() {
   const appURL = "https://arco-henna.vercel.app";
   let customerId = null;
-  let cartSyncInterval = null; // Variable global dentro del IIFE
-  let lastSyncTime = 0; // Timestamp de la última sincronización
-  let isReloading = false; // Flag para evitar múltiples recargas
-  let reloadAttempts = 0; // Contador de intentos de recarga
-  const MAX_RELOAD_ATTEMPTS = 3; // Máximo número de intentos de recarga
+  let cartSyncInterval = null;
+  let lastSyncTime = 0;
+  let isReloading = false;
+  let reloadAttempts = 0;
+  const MAX_RELOAD_ATTEMPTS = 3;
+
+  // Obtener configuraciones
+  function getConfig() {
+    const config = window.CART_SYNC_CONFIG || {};
+    return {
+      enable_sync: config.enable_sync !== false, // default true
+      sync_frequency: config.sync_frequency || 'fast'
+    };
+  }
+
+  // Usar la frecuencia configurada
+  function getSyncInterval() {
+    const config = getConfig();
+    switch (config.sync_frequency) {
+      case 'slow': return 10000; // 10 segundos
+      case 'normal': return 5000; // 5 segundos
+      case 'fast': 
+      default: return 3000; // 3 segundos
+    }
+  }
+
+  // Verificar si está habilitado
+  function isSyncEnabled() {
+    const config = getConfig();
+    return config.enable_sync;
+  }
 
   function getCustomerId() {
     const id = typeof window !== 'undefined' && window.CUSTOMER_ID ? String(window.CUSTOMER_ID) : null;
@@ -17,7 +43,6 @@
   function updateCustomerId() {
     const newCustomerId = getCustomerId();
     if (newCustomerId && newCustomerId !== customerId) {
-      console.log('[CartSync] Customer ID updated from', customerId, 'to', newCustomerId);
       customerId = newCustomerId;
     }
     return customerId;
@@ -31,16 +56,18 @@
         headers: { 'Accept': 'application/json' }
       });
       if (response.ok) {
-        const cart = await response.json();
-        return cart;
+        return await response.json();
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error('[CartSync] Error fetching local cart:', err);
+    }
     return null;
   }
 
   async function fetchBackendCart() {
-    updateCustomerId(); // Actualizar customerId antes de hacer la petición
+    updateCustomerId();
     if (!customerId) return null;
+    
     try {
       const response = await fetch(`${appURL}/api/cart?userId=${encodeURIComponent(customerId)}`, {
         method: "GET",
@@ -50,15 +77,15 @@
         const data = await response.json();
         return data.cart || null;
       }
-    } catch (err) {}
+    } catch (err) {
+      console.error('[CartSync] Error fetching backend cart:', err);
+    }
     return null;
   }
 
   async function syncLocalCartToBackend(cart) {
-    updateCustomerId(); // Actualizar customerId antes de hacer la petición
-    if (!customerId) {
-      return null;
-    }
+    updateCustomerId();
+    if (!customerId) return null;
     
     try {
       const response = await fetch(appURL + '/api/cart', {
@@ -89,7 +116,6 @@
     if (!cartA && !cartB) return true;
     if (!cartA || !cartB) return false;
     
-    // Comparar número de items
     const localItemCount = cartA.items?.length || 0;
     const backendItemCount = cartB.items?.length || 0;
     
@@ -98,10 +124,9 @@
       return false;
     }
     
-    // Si ambos están vacíos, son iguales
     if (localItemCount === 0) return true;
     
-    // Comparar precios totales (convertir de centavos a unidades)
+    // Comparar precios totales
     const localPrice = cartA.total_price ? Math.round(cartA.total_price / 100 * 100) / 100 : 0;
     const backendPrice = cartB.totalPrice ? Math.round(cartB.totalPrice * 100) / 100 : 0;
     
@@ -110,7 +135,6 @@
       return false;
     }
     
-    // Comparar items individuales
     const localItems = cartA.items || [];
     const backendItems = cartB.items || [];
     
@@ -121,18 +145,16 @@
     const backendItemMap = new Map();
     
     localItems.forEach(item => {
-      // Convertir a string para comparación consistente
       const key = String(item.variant_id || item.id);
       localItemMap.set(key, item.quantity);
     });
     
     backendItems.forEach(item => {
-      // Convertir a string para comparación consistente
       const key = String(item.shopifyVariantId || item.variantId || item.variant_id);
       backendItemMap.set(key, item.quantity);
     });
     
-    // Comparar cada item del local con el backend
+    // Comparar items
     for (const [key, localQty] of localItemMap) {
       const backendQty = backendItemMap.get(key);
       if (backendQty === undefined || localQty !== backendQty) {
@@ -141,7 +163,7 @@
       }
     }
     
-    // Verificar que no hay items en el backend que no estén en el local
+    // Verificar items del backend
     for (const [key, backendQty] of backendItemMap) {
       const localQty = localItemMap.get(key);
       if (localQty === undefined || localQty !== backendQty) {
@@ -159,7 +181,6 @@
       return;
     }
     
-    // Verificar si hemos excedido el número máximo de intentos
     if (reloadAttempts >= MAX_RELOAD_ATTEMPTS) {
       console.log('[CartSync] Maximum reload attempts reached, stopping sync to prevent infinite loop');
       return;
@@ -176,7 +197,7 @@
       await fetch('/cart/clear.js', { method: 'POST', credentials: 'include' });
       if (cart && cart.items && cart.items.length > 0) {
         const items = cart.items.map(item => ({
-          id: item.shopifyVariantId, // Usar shopifyVariantId del backend
+          id: item.shopifyVariantId,
           quantity: item.quantity,
           properties: item.properties || undefined,
         }));
@@ -199,7 +220,6 @@
     if (localStorage.getItem('cart_sync_reloaded')) {
       localStorage.removeItem('cart_sync_reloaded');
       
-      // Recuperar el contador de intentos
       const attemptsStr = localStorage.getItem('cart_sync_attempts');
       if (attemptsStr) {
         reloadAttempts = parseInt(attemptsStr);
@@ -212,7 +232,6 @@
         localStorage.removeItem('cart_sync_timestamp');
       }
       
-      // Después de una recarga, verificar que la sincronización fue exitosa
       updateCustomerId();
       if (customerId) {
         const [localCart, backendCart] = await Promise.all([
@@ -229,14 +248,13 @@
           }
         } else {
           console.log('[CartSync] Carts synchronized after reload');
-          // Resetear el contador de intentos si la sincronización fue exitosa
           reloadAttempts = 0;
         }
       }
       return;
     }
     
-    updateCustomerId(); // Actualizar customerId antes de hacer la sincronización inicial
+    updateCustomerId();
     if (!customerId) {
       console.log('[CartSync] No customer ID found, skipping sync');
       return;
@@ -267,7 +285,6 @@
       return;
     }
 
-    // Ambos tienen items
     if (cartsAreEqual(localCart, backendCart)) {
       console.log('[CartSync] Carts are synchronized');
       return;
@@ -288,11 +305,10 @@
           clearInterval(cartSyncInterval);
         }
         
-        // Usar un timeout más corto para sincronización más rápida
         setTimeout(async () => {
           const cart = await getLocalCart();
           await syncLocalCartToBackend(cart);
-        }, 1000); // Reducido de 2s a 1s
+        }, 1000);
       }
       return originalFetch.apply(this, args);
     };
@@ -308,54 +324,59 @@
           setTimeout(async () => {
             const cart = await getLocalCart();
             await syncLocalCartToBackend(cart);
-          }, 1000); // Reducido de 2s a 1s
+          }, 1000);
         }
       });
       return originalOpen.call(this, method, url, ...rest);
     };
     
-    // También interceptar eventos de cambio del carrito si existen
     if (typeof window.Shopify !== 'undefined' && window.Shopify.onCartUpdate) {
       window.Shopify.onCartUpdate = function(cart) {
         setTimeout(async () => {
           await syncLocalCartToBackend(cart);
-        }, 500); // Reducido de 1s a 0.5s
+        }, 500);
       };
     }
     
-    // Interceptar eventos personalizados del carrito si existen
     document.addEventListener('cart:updated', function(event) {
       setTimeout(async () => {
         const cart = await getLocalCart();
         await syncLocalCartToBackend(cart);
-      }, 500); // Reducido de 1s a 0.5s
+      }, 500);
     });
   }
 
   function startRealtimeCartSync() {
-    // Si acabamos de recargar, esperar más tiempo antes de empezar el polling
+    // Verificar si la sincronización está habilitada
+    if (!isSyncEnabled()) {
+      console.log('[CartSync] Cart synchronization is disabled in settings');
+      return;
+    }
+
+    const COOLDOWN_TIME = 10000; // 10 segundos de cooldown
     const timeSinceLastSync = Date.now() - lastSyncTime;
-    const initialDelay = timeSinceLastSync < 10000 ? 10000 - timeSinceLastSync : 2000; // Reducido de 30s a 10s
+    const initialDelay = timeSinceLastSync < COOLDOWN_TIME ? COOLDOWN_TIME - timeSinceLastSync : 2000;
     
     setTimeout(() => {
+      const syncInterval = getSyncInterval();
+      console.log('[CartSync] Starting realtime sync with interval:', syncInterval, 'ms');
+      
       cartSyncInterval = setInterval(async () => {
         if (document.visibilityState !== 'visible') return;
-        if (isReloading) return; // No hacer polling si estamos recargando
+        if (isReloading) return;
         
-        // Evitar polling inmediatamente después de una recarga
         const timeSinceLastSync = Date.now() - lastSyncTime;
-        if (timeSinceLastSync < 10000) { // Reducido de 30s a 10s
+        if (timeSinceLastSync < COOLDOWN_TIME) {
           return;
         }
         
-        // Verificar si hemos excedido el número máximo de intentos de recarga
         if (reloadAttempts >= MAX_RELOAD_ATTEMPTS) {
           console.log('[CartSync] Maximum reload attempts reached, stopping polling to prevent infinite loop');
           clearInterval(cartSyncInterval);
           return;
         }
         
-        updateCustomerId(); // Actualizar customerId antes de hacer el polling
+        updateCustomerId();
         if (!customerId) return;
         
         const [localCart, backendCart] = await Promise.all([
@@ -368,13 +389,18 @@
           await replaceShopifyCartWith(backendCart);
           clearInterval(cartSyncInterval);
         }
-      }, 3000); // Reducido de 5s a 3s para polling más frecuente
+      }, syncInterval);
     }, initialDelay);
   }
 
-  // --- INIT ---
   const onLoad = () => {
-    updateCustomerId(); // Asegurar que tenemos el customerId
+    // Verificar si la sincronización está habilitada
+    if (!isSyncEnabled()) {
+      console.log('[CartSync] Cart synchronization is disabled in app block settings');
+      return;
+    }
+
+    updateCustomerId();
     initialSync();
     setTimeout(interceptCartRequests, 1000);
     startRealtimeCartSync();
