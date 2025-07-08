@@ -129,15 +129,13 @@ export default function Privacy() {
         <h2 className="text-2xl font-semibold mt-8 mb-4">Contact Us</h2>
         
         <p className="mb-4">
-          For more information about our privacy practices, if you have questions, or if you would like to make a complaint, please contact us by e-mail at <a href="mailto:privacy@arco-cart-sync.com" className="text-blue-600 hover:underline">privacy@arco-cart-sync.com</a> or by mail using the details provided below:
+          For more information about our privacy practices, if you have questions, or if you would like to make a complaint, please contact us by e-mail at <a href="mailto:jesus@arciniega.dev" className="text-blue-600 hover:underline">privacy@arco-cart-sync.com</a> or by mail using the details provided below:
         </p>
 
         <div className="bg-gray-50 p-4 rounded-lg mb-6">
           <p className="mb-2"><strong>Arco Cart Sync</strong></p>
-          <p className="mb-2">Privacy Team</p>
-          <p className="mb-2">[Your Business Address]</p>
-          <p className="mb-2">[City, State, ZIP Code]</p>
-          <p className="mb-2">[Country]</p>
+          <p className="mb-2">Arciniega Dev Team</p>
+          <p className="mb-2">Chihuahua, Mexico</p>
         </div>
 
         <div className="text-sm text-gray-600 mt-8 pt-4 border-t">
