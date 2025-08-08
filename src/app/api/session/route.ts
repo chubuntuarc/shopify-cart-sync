@@ -4,8 +4,13 @@ import { CartService } from '@/lib/cart';
 
 export async function GET(request: NextRequest) {
   try {
-    const { userId } = await request.json();
-    const sessionData = await getOrCreateSession(userId);
+    // Para peticiones GET, no intentamos leer el body
+    // En su lugar, obtenemos el userId de cookies o headers
+    const userId = request.cookies.get('user_id')?.value || 
+                   request.headers.get('x-user-id') || 
+                   undefined;
+    
+    const sessionData = await getOrCreateSession(userId, request);
     
     // Register device
     await registerDevice(sessionData.sessionId, request);
@@ -39,7 +44,7 @@ export async function POST(request: NextRequest) {
   try {
     const { userId } = await request.json();
     
-    const sessionData = await getOrCreateSession(userId);
+    const sessionData = await getOrCreateSession(userId, request);
     
     // Register device
     await registerDevice(sessionData.sessionId, request);
