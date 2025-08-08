@@ -15,11 +15,21 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get('code');
   const state = searchParams.get('state');
 
-  console.log('Auth callback received:', { shop, hasCode: !!code, state });
+  console.log('=== OAuth Process Start ===');
+  console.log('Auth callback received:', { 
+    shop, 
+    hasCode: !!code, 
+    state,
+    url: request.url,
+    method: request.method,
+    headers: Object.fromEntries(request.headers.entries())
+  });
 
   // Validar variables de entorno
   if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET) {
-    console.error('Missing Shopify API credentials');
+    console.error('❌ Missing Shopify API credentials');
+    console.error('SHOPIFY_API_KEY exists:', !!SHOPIFY_API_KEY);
+    console.error('SHOPIFY_API_SECRET exists:', !!SHOPIFY_API_SECRET);
     return NextResponse.json(
       { error: 'App not properly configured' },
       { status: 500 }
@@ -27,7 +37,7 @@ export async function GET(request: NextRequest) {
   }
 
   if (!shop) {
-    console.error('Missing shop parameter');
+    console.error('❌ Missing shop parameter');
     return NextResponse.json(
       { error: 'Missing shop parameter' },
       { status: 400 }
@@ -36,6 +46,7 @@ export async function GET(request: NextRequest) {
 
   // If no code, start OAuth flow
   if (!code) {
+    console.log('🔄 Starting OAuth flow for shop:', shop);
     const nonce = generateNonce();
     const installUrl = `https://${shop}/admin/oauth/authorize?` +
       `client_id=${SHOPIFY_API_KEY}&` +
@@ -43,17 +54,21 @@ export async function GET(request: NextRequest) {
       `redirect_uri=${APP_URL}/api/shopify/auth&` +
       `state=${nonce}&grant_options[]=per-user`;
 
-    // Store nonce for validation
-    // In production, use Redis or database
+    console.log('📤 Redirecting to Shopify OAuth:', installUrl);
     return NextResponse.redirect(installUrl);
   }
 
   // Handle OAuth callback
   try {
-    console.log('Starting token exchange for shop:', shop);
+    console.log('🔄 Starting token exchange for shop:', shop);
+    console.log('📝 Code received:', code ? 'YES' : 'NO');
+    console.log('🔑 State received:', state ? 'YES' : 'NO');
 
     // Exchange code for access token
-    const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
+    const tokenUrl = `https://${shop}/admin/oauth/access_token`;
+    console.log('📤 Making token request to:', tokenUrl);
+    
+    const tokenResponse = await fetch(tokenUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -65,44 +80,65 @@ export async function GET(request: NextRequest) {
       }),
     });
 
+    console.log('📥 Token response status:', tokenResponse.status);
+    console.log('📥 Token response headers:', Object.fromEntries(tokenResponse.headers.entries()));
+
     const tokenData = await tokenResponse.json();
-    console.log('Token response status:', tokenResponse.status);
-    console.log('TokenData:', tokenData);
+    console.log(' TokenData received:', {
+      hasAccessToken: !!tokenData.access_token,
+      hasScope: !!tokenData.scope,
+      hasUserId: !!tokenData.associated_user,
+      error: tokenData.error,
+      errorDescription: tokenData.error_description
+    });
 
     if (!tokenResponse.ok) {
-      console.error('Token exchange failed:', tokenData);
+      console.error('❌ Token exchange failed:', tokenData);
       throw new Error(`Token exchange failed: ${tokenData.error || 'Unknown error'}`);
     }
 
     if (!tokenData.access_token) {
-      console.error('No access token in response:', tokenData);
+      console.error('❌ No access token in response:', tokenData);
       throw new Error('Failed to get access token');
     }
 
-    console.log('Token exchange successful, fetching shop data');
+    console.log('✅ Token exchange successful, fetching shop data');
 
     // Get shop information
-    const shopResponse = await fetch(`https://${shop}/admin/api/2023-10/shop.json`, {
+    const shopApiUrl = `https://${shop}/admin/api/2023-10/shop.json`;
+    console.log(' Fetching shop data from:', shopApiUrl);
+    
+    const shopResponse = await fetch(shopApiUrl, {
       headers: {
         'X-Shopify-Access-Token': tokenData.access_token,
       },
     });
 
+    console.log('📥 Shop API response status:', shopResponse.status);
+    console.log('📥 Shop API response headers:', Object.fromEntries(shopResponse.headers.entries()));
+
     const shopData = await shopResponse.json();
-    console.log('Shop API response status:', shopResponse.status);
+    console.log(' Shop data received:', {
+      hasShop: !!shopData.shop,
+      shopName: shopData.shop?.name,
+      shopEmail: shopData.shop?.email,
+      shopPlan: shopData.shop?.plan_name
+    });
 
     if (!shopResponse.ok) {
-      console.error('Shop API failed:', shopData);
+      console.error('❌ Shop API failed:', shopData);
       throw new Error(`Shop API failed: ${shopData.error || 'Unknown error'}`);
     }
 
-    console.log('Shop data fetched, saving to database');
-    console.log('Shop domain:', shop);
-    console.log('Shop data:', shopData.shop);
+    console.log('✅ Shop data fetched, saving to database');
+    console.log('🏪 Shop domain:', shop);
+    console.log('🏪 Shop data to save:', shopData.shop);
 
     const userId = tokenData.associated_user?.id;
 
     try {
+      console.log(' Attempting to save shop to database...');
+      
       // Store shop and access token in database
       const savedShop = await prisma.shop.upsert({
         where: { domain: shop },
@@ -121,30 +157,29 @@ export async function GET(request: NextRequest) {
         },
       });
 
-      console.log('Shop saved to database successfully:', savedShop.id);
+      console.log('✅ Shop saved to database successfully:', {
+        id: savedShop.id,
+        domain: savedShop.domain,
+        isActive: savedShop.isActive,
+        createdAt: savedShop.createdAt
+      });
     } catch (dbError) {
-      console.error('Database error saving shop:', dbError);
+      console.error('❌ Database error saving shop:', dbError);
+      console.error('❌ Database error details:', {
+        message: dbError instanceof Error ? dbError.message : 'Unknown error',
+        stack: dbError instanceof Error ? dbError.stack : undefined
+      });
       throw new Error(`Database error: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`);
     }
-
-    // try {
-    //   await registerShopifyScriptTag(
-    //     shop,
-    //     tokenData.access_token,
-    //     `${APP_URL}/scripts/cart-sync.min.js`
-    //   );
-    //   console.log('ScriptTag registered');  
-    // } catch (err) {
-    //   console.error('Error registering ScriptTag:', err);
-    // }
 
     // Redirect to Shopify admin apps page instead of direct app dashboard
     const shopName = shop.replace('.myshopify.com', '');
     const redirectUrl = `https://admin.shopify.com/store/${shopName}/apps/arco-cart-sync`;
-    console.log('Redirecting to:', redirectUrl);
+    console.log('🔄 Redirecting to:', redirectUrl);
     
     // Crea o actualiza la sesión para el usuario
     if (userId) {
+      console.log('👤 Creating session for user:', userId);
       await prisma.session.upsert({
         where: { id: String(userId) },
         update: {
@@ -158,15 +193,18 @@ export async function GET(request: NextRequest) {
           expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
       });
+      console.log('✅ Session created successfully');
     } else {
-      console.warn('No userId found in tokenData.associated_user');
+      console.warn('⚠️ No userId found in tokenData.associated_user');
     }
 
+    console.log('=== OAuth Process Complete ===');
     return NextResponse.redirect(redirectUrl);
 
   } catch (error) {
-    console.error('OAuth error details:', error);
-    console.error('Error stack:', (error as Error).stack);
+    console.error('❌ OAuth error details:', error);
+    console.error('❌ Error stack:', (error as Error).stack);
+    console.error('=== OAuth Process Failed ===');
     
     // Return more detailed error information
     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
