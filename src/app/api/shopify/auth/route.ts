@@ -17,6 +17,15 @@ export async function GET(request: NextRequest) {
 
   console.log('Auth callback received:', { shop, hasCode: !!code, state });
 
+  // Validar variables de entorno
+  if (!SHOPIFY_API_KEY || !SHOPIFY_API_SECRET) {
+    console.error('Missing Shopify API credentials');
+    return NextResponse.json(
+      { error: 'App not properly configured' },
+      { status: 500 }
+    );
+  }
+
   if (!shop) {
     console.error('Missing shop parameter');
     return NextResponse.json(
@@ -88,30 +97,35 @@ export async function GET(request: NextRequest) {
     }
 
     console.log('Shop data fetched, saving to database');
+    console.log('Shop domain:', shop);
+    console.log('Shop data:', shopData.shop);
 
-    const userId = tokenData.associated_user?.id; // Shopify user ID
+    const userId = tokenData.associated_user?.id;
 
-    // Store shop and access token in database
-    const savedShop = await prisma.shop.upsert({
-      where: { domain: shop },
-      update: {
-        accessToken: tokenData.access_token,
-        scope: tokenData.scope,
-        isActive: true,
-        shopData: shopData.shop,
-        // userId: userId || undefined, // Si tu modelo Shop lo soporta
-      },
-      create: {
-        domain: shop,
-        accessToken: tokenData.access_token,
-        scope: tokenData.scope,
-        isActive: true,
-        shopData: shopData.shop,
-        // userId: userId || undefined,
-      },
-    });
+    try {
+      // Store shop and access token in database
+      const savedShop = await prisma.shop.upsert({
+        where: { domain: shop },
+        update: {
+          accessToken: tokenData.access_token,
+          scope: tokenData.scope,
+          isActive: true,
+          shopData: shopData.shop,
+        },
+        create: {
+          domain: shop,
+          accessToken: tokenData.access_token,
+          scope: tokenData.scope,
+          isActive: true,
+          shopData: shopData.shop,
+        },
+      });
 
-    console.log('Shop saved to database:', savedShop.id);
+      console.log('Shop saved to database successfully:', savedShop.id);
+    } catch (dbError) {
+      console.error('Database error saving shop:', dbError);
+      throw new Error(`Database error: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`);
+    }
 
     // try {
     //   await registerShopifyScriptTag(
