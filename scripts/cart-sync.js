@@ -1,4 +1,4 @@
-// npx terser scripts/cart-sync.js -o public/scripts/cart-sync.min.js --compress --mangle
+// npx terser scripts/cart-sync.js -o extensions/arco-cart-sync/assets/cart-sync.min.js --compress --mangle
 
 (function() {
   const appURL = "https://arco-henna.vercel.app";
