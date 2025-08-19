@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Next.js middleware for Shopify persistent cart",
   "scripts": {
-    "dev": "next dev",
+    "dev": "bash scripts/dev-local-shopify.sh",
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",

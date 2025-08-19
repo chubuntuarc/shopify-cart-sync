@@ -1,7 +1,7 @@
 // npx terser scripts/cart-sync.js -o public/scripts/cart-sync.min.js --compress --mangle
 
-(function() {
-  const appURL = "https://arco-henna.vercel.app";
+(function () {
+  const appURL = "https://19f558298788.ngrok-free.app";
   let customerId = null;
   let cartSyncInterval = null;
   let lastSyncTime = 0;
