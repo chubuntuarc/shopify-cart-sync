@@ -2,21 +2,16 @@
 
 echo "🛒 Shopify Cart Sync - Local Dev Helper"
 
-# 1. Verifica Node y dependencias
-if ! command -v node &> /dev/null; then
-  echo "❌ Node.js no está instalado."
-  exit 1
-fi
-
-if ! command -v npm &> /dev/null; then
-  echo "❌ npm no está instalado."
+# 1. Verifica Bun y dependencias
+if ! command -v bun &> /dev/null; then
+  echo "❌ Bun no está instalado. Visita https://bun.sh"
   exit 1
 fi
 
 # 2. Instala dependencias si es necesario
 if [ ! -d "node_modules" ]; then
   echo "📦 Instalando dependencias..."
-  npm install
+  bun install
 fi
 
 # 3. Verifica .env.local
@@ -36,12 +31,12 @@ done
 
 # 5. Prepara la base de datos
 echo "🗄️  Ejecutando migraciones de Prisma..."
-npx prisma generate
-npx prisma migrate dev --name dev-local --skip-seed
+bun run prisma generate
+bun run prisma migrate dev --name dev-local --skip-seed
 
 # 6. Inicia la app en modo desarrollo
 echo "🚀 Iniciando la app en http://localhost:3000 ..."
-npx next dev &
+bun run next dev &
 
 DEV_PID=$!
 sleep 5

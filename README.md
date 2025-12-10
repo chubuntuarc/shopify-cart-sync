@@ -46,7 +46,7 @@ Or follow manual steps:
 
 3. **Install dependencies manually**
 ```bash
-npm install
+bun install
 ```
 
 4. **Configure environment variables**
@@ -76,23 +76,23 @@ NEXTAUTH_SECRET="your-nextauth-secret"
 5. **Configure the database**
 ```bash
 # Generate Prisma client
-npx prisma generate
+bun run prisma generate
 
 # Run migrations
-npx prisma migrate dev --name init
+bun run prisma migrate dev --name init
 
 # (Optional) Open Prisma Studio to view database
-npx prisma studio
+bun run prisma studio
 ```
 
 6. **Run the application**
 ```bash
 # Development
-npm run dev
+bun run dev
 
 # Production
-npm run build
-npm run start
+bun run build
+bun run start
 ```
 
 The application will be available at `http://localhost:3000`
@@ -273,15 +273,15 @@ cd persistent-cart
 
 2. **Install dependencies**:
 ```bash
-npm install
-npm run build
+bun install
+bun run build
 ```
 
 3. **Configure environment variables** for production
 4. **Use PM2 for process management**:
 ```bash
-npm install -g pm2
-pm2 start npm --name "persistent-cart" -- start
+bun add -g pm2
+pm2 start "bun run start" --name "persistent-cart"
 ```
 
 ### Environment Variables for Production
@@ -299,18 +299,18 @@ SHOPIFY_ACCESS_TOKEN=your-production-token
 
 ```bash
 # Unit tests
-npm run test
+bun run test
 
 # Integration tests
-npm run test:integration
+bun run test:integration
 
 # Linting
-npm run lint
+bun run lint
 
 # Shopify Integration from local environment.
 # This will load the environment variables from the shopify.env file.
 # You can use the _example_shopify.env file as a reference.
-source shopify.env && npm run dev
+source shopify.env && bun run dev
 ```
   
 ## 📊 Monitoring
@@ -326,19 +326,19 @@ The application includes logs to monitor:
 
 ```bash
 # View database schema
-npx prisma studio
+bun run prisma studio
 
 # Reset database
-npx prisma migrate reset
+bun run prisma migrate reset
 
 # Generate new migration
-npx prisma migrate dev --name migration_name
+bun run prisma migrate dev --name migration_name
 
 # View logs in development
-npm run dev
+bun run dev
 
 # Check TypeScript types
-npx tsc --noEmit
+bun run tsc --noEmit
 ```
 
 ## 🤝 Contributing
@@ -442,16 +442,16 @@ if (importResponse.ok) {
 
 ```bash
 # Unit tests
-npm run test
+bun run test
 
 # Integration tests
-npm run test:integration
+bun run test:integration
 
 # Linting
-npm run lint
+bun run lint
 
 # Shopify Integration from local environment.
 # This will load the environment variables from the shopify.env file.
 # You can use the _example_shopify.env file as a reference.
-source shopify.env && npm run dev
+source shopify.env && bun run dev
 ```

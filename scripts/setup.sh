@@ -2,21 +2,14 @@
 
 echo "🚀 Setting up Persistent Cart Middleware for Shopify..."
 
-# Check Node.js
-if ! command -v node &> /dev/null; then
-    echo "❌ Node.js is not installed. Please install Node.js 18 or higher."
-    echo "   You can download it from: https://nodejs.org/"
+# Check Bun
+if ! command -v bun &> /dev/null; then
+    echo "❌ Bun is not installed. Please install Bun."
+    echo "   You can install it from: https://bun.sh/"
     exit 1
 fi
 
-NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
-if [ "$NODE_VERSION" -lt 18 ]; then
-    echo "❌ Node.js 18 or higher is required. Current version: $(node -v)"
-    echo "   Please update from: https://nodejs.org/"
-    exit 1
-fi
-
-echo "✅ Node.js version: $(node -v)"
+echo "✅ Bun version: $(bun -v)"
 
 # Check if database is available
 echo "🔍 Checking for databases..."
@@ -45,11 +38,12 @@ if [ "$DB_AVAILABLE" = false ]; then
     echo "   - macOS: brew install mysql"
     echo "   - Ubuntu/Debian: sudo apt-get install mysql-server"
     echo "   - Windows: https://dev.mysql.com/downloads/"
+    echo "   - Windows: https://dev.mysql.com/downloads/"
 fi
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-npm install
+bun install
 
 if [ $? -ne 0 ]; then
     echo "❌ Error installing dependencies. Please check your internet connection."
@@ -72,7 +66,7 @@ fi
 # Check if Prisma is configured
 if [ -f "prisma/schema.prisma" ]; then
     echo "🎯 Generating Prisma client..."
-    npx prisma generate
+    bun run prisma generate
     
     if [ $? -eq 0 ]; then
         echo "✅ Prisma client generated successfully"
@@ -84,8 +78,8 @@ if [ -f "prisma/schema.prisma" ]; then
     echo ""
     echo "⚠️  To configure the database:"
     echo "   1. Make sure DATABASE_URL is configured in .env.local"
-    echo "   2. Run: npx prisma migrate dev --name init"
-    echo "   3. (Optional) Open Prisma Studio: npx prisma studio"
+    echo "   2. Run: bun run prisma migrate dev --name init"
+    echo "   3. (Optional) Open Prisma Studio: bun run prisma studio"
 else
     echo "❌ Prisma schema not found"
     exit 1
@@ -97,9 +91,9 @@ echo ""
 echo "📋 Next steps:"
 echo "1. 📝 Edit .env.local with your Shopify and database credentials"
 echo "2. 🗄️  Configure your database:"
-echo "   npx prisma migrate dev --name init"
+echo "   bun run prisma migrate dev --name init"
 echo "3. 🚀 Run the application:"
-echo "   npm run dev"
+echo "   bun run dev"
 echo "4. 🌐 Open http://localhost:3000 in your browser"
 echo ""
 echo "📚 Read the README.md for:"

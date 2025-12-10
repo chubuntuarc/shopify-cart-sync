@@ -34,7 +34,7 @@
 #### Option B: Deploy with Vercel CLI
 ```bash
 # Install Vercel CLI
-npm i -g vercel
+bun add -g vercel
 
 # Deploy
 vercel
@@ -71,7 +71,7 @@ After deployment, run the database migration:
 ```bash
 # Using Vercel CLI
 vercel env pull .env.local
-npx prisma db push
+bun run prisma db push
 ```
 
 ### Step 6: Install App in Shopify Store
@@ -117,7 +117,7 @@ npx prisma db push
 
 5. Run migrations:
    ```bash
-   heroku run npx prisma db push
+   heroku run bun run prisma db push
    ```
 
 ## 📱 Shopify App Store Submission (Optional)
